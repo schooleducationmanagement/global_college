@@ -1,0 +1,547 @@
+.header {
+    margin-bottom: 24px;
+}
+
+.header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+/* Class picker bar */
+.pickerBar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.pickerBar label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.pickerBar select {
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    min-width: 240px;
+}
+
+.pickerBar select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Grid */
+.gridWrap {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow-x: auto;
+}
+
+.grid {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 820px;
+}
+
+.grid th {
+    background: #f8fafc;
+    padding: 12px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.grid th:first-child {
+    text-align: left;
+    padding-left: 18px;
+    width: 130px;
+}
+
+.periodCell {
+    padding: 10px 12px 10px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.periodName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.periodTime {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* Slot cells */
+.slot {
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    padding: 6px;
+    height: 64px;
+    cursor: pointer;
+    transition: background 0.12s;
+    vertical-align: middle;
+}
+
+.slot:hover {
+    background: #f8fafc;
+}
+
+.slotFilled {
+    background: #eef2ff;
+}
+
+.slotFilled:hover {
+    background: #e0e7ff;
+}
+
+.slotSubject {
+    font-size: 13px;
+    font-weight: 600;
+    color: #3730a3;
+    line-height: 1.3;
+}
+
+.slotTeacher {
+    font-size: 12px;
+    color: #6366f1;
+    margin-top: 2px;
+}
+
+.slotEmpty {
+    font-size: 12px;
+    color: #cbd5e1;
+    text-align: center;
+}
+
+/* Break/lunch rows */
+.breakRow td {
+    background: #fafafa;
+    text-align: center;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* Empty state */
+.placeholder {
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 56px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* ===== Modal editor ===== */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    width: 380px;
+    max-width: 92vw;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+}
+
+.modalHead {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.modalHead h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.modalHead p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.modalBody {
+    padding: 22px;
+}
+
+.modalBody label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.modalBody select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.modalBody select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.modalMsg {
+    font-size: 12px;
+    color: #b91c1c;
+    margin-bottom: 12px;
+}
+
+.modalFoot {
+    display: flex;
+    gap: 10px;
+    padding: 16px 22px;
+    border-top: 1px solid #f1f5f9;
+    background: #fcfcfd;
+}
+
+.btnPrimary {
+    flex: 1;
+    padding: 10px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btnPrimary:hover {
+    background: #4338ca;
+}
+
+.btnPrimary:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+}
+
+.btnGhost {
+    padding: 10px 16px;
+    background: #fff;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btnGhost:hover {
+    background: #f8fafc;
+}
+
+.btnClear {
+    padding: 10px 16px;
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.btnClear:hover {
+    background: #fef2f2;
+}
+
+/* ===== Mode toggle ===== */
+/* ===== Unified grid additions ===== */
+.periodCellClickable {
+    padding: 10px 12px 10px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.periodCellClickable:hover {
+    background: #f8fafc;
+}
+
+.periodHint {
+    font-size: 11px;
+    color: #c7d2fe;
+    margin-top: 3px;
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.periodCellClickable:hover .periodHint {
+    opacity: 1;
+}
+
+.addRowBar {
+    display: flex;
+    gap: 10px;
+    padding: 16px 0 0;
+    flex-wrap: wrap;
+}
+
+.addBtn {
+    padding: 9px 14px;
+    background: #fff;
+    color: #4f46e5;
+    border: 1px solid #c7d2fe;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    background: #eef2ff;
+}
+
+/* structure popup extras */
+.typeRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.typeOption {
+    flex: 1;
+    padding: 9px;
+    text-align: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #64748b;
+    background: #fff;
+}
+
+.typeOptionActive {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.timeRow {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.timeRow>div {
+    flex: 1;
+}
+
+.orderControls {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.orderControls button {
+    flex: 1;
+    padding: 8px;
+    background: #f1f5f9;
+    border: none;
+    border-radius: 7px;
+    font-size: 13px;
+    color: #475569;
+    cursor: pointer;
+}
+
+.orderControls button:hover {
+    background: #e2e8f0;
+}
+
+.orderControls button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.modalInput {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.modalInput:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.warnText {
+    font-size: 12px;
+    color: #b45309;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: 7px;
+    padding: 9px 11px;
+    margin-bottom: 14px;
+}
+
+.placeholder {
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 56px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.setupBtn {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.setupBtn:hover {
+    background: #4338ca;
+}
+
+.dayHeader {
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+
+.dayHeader:hover {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+/* ===== Transposed grid (days as rows, periods as columns) ===== */
+.dayCellClickable {
+    padding: 10px 12px 10px 18px;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: background 0.12s;
+    min-width: 120px;
+}
+
+.dayCellClickable:hover {
+    background: #fef2f2;
+}
+
+.dayName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.dayHint {
+    font-size: 11px;
+    color: #fca5a5;
+    margin-top: 3px;
+    opacity: 0;
+    transition: opacity 0.12s;
+}
+
+.dayCellClickable:hover .dayHint {
+    opacity: 1;
+}
+
+/* period column headers (now the top row) */
+.periodHeader {
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    min-width: 130px;
+}
+
+.periodHeader:hover {
+    background: #eef2ff;
+    color: #4f46e5;
+}
+
+.periodHeaderInner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.periodHeaderLabel {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.periodHeaderTime {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+/* break/lunch column header styling */
+.breakHeader {
+    background: #fafafa !important;
+    color: #b45309 !important;
+}
+
+/* a break/lunch column cell (not fillable) */
+.breakColCell {
+    background: #fcfcfc;
+    border-bottom: 1px solid #f1f5f9;
+    border-right: 1px solid #f1f5f9;
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 18px;
+}

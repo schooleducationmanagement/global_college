@@ -1,0 +1,217 @@
+.header {
+    margin-bottom: 28px;
+}
+
+.header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.cardHead {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.cardHead h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.cardHead span {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+.cardBody {
+    padding: 22px;
+}
+
+.formRow {
+    margin-bottom: 16px;
+}
+
+.formRow:last-of-type {
+    margin-bottom: 0;
+}
+
+.formRow label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.formRow select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.formRow select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.submitBtn {
+    width: 100%;
+    margin-top: 22px;
+    padding: 11px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.submitBtn:hover {
+    background: #4338ca;
+}
+
+.submitBtn:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+}
+
+.message {
+    margin-top: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.messageOk {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+}
+
+.messageErr {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.hint {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+}
+
+/* ===== Grouped list ===== */
+.teacherGroup {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.teacherGroup:last-child {
+    border-bottom: none;
+}
+
+.teacherName {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 12px;
+}
+
+.assignRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+}
+
+.assignRow:not(:last-child) {
+    border-bottom: 1px dashed #f1f5f9;
+}
+
+.assignInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #334155;
+}
+
+.subjectPill {
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.arrow {
+    color: #cbd5e1;
+}
+
+.classText {
+    color: #64748b;
+}
+
+.deleteBtn {
+    padding: 5px 11px;
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.deleteBtn:hover {
+    background: #fef2f2;
+}
+
+.empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}

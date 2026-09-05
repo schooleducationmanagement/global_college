@@ -1,0 +1,98 @@
+.header { margin-bottom: 20px; }
+.header h2 { font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+.header p { color: #64748b; font-size: 14px; margin: 0; }
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+.cardHead {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid #f1f5f9;
+}
+.cardHead h3 { font-size: 15px; font-weight: 600; color: #0f172a; margin: 0; }
+.sheetMeta { font-size: 13px; color: #94a3b8; }
+.cardBody { padding: 18px; }
+
+.dateRow { display: flex; align-items: center; gap: 12px; }
+.dateRow label { font-size: 14px; font-weight: 600; color: #475569; }
+.dateRow input {
+    padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 14px; color: #0f172a;
+}
+.weekdayTag {
+    font-size: 13px; font-weight: 600; color: #6366f1;
+    background: #eef2ff; padding: 4px 10px; border-radius: 999px;
+}
+
+.empty {
+    padding: 28px; text-align: center; color: #94a3b8; font-size: 14px;
+}
+
+/* period list */
+.periodList { display: flex; flex-direction: column; gap: 8px; margin-top: 16px; }
+.periodItem {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 14px; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    cursor: pointer; text-align: left; width: 100%;
+    transition: border-color 0.15s, background 0.15s;
+}
+.periodItem:hover { border-color: #c7d2fe; background: #fafbff; }
+.periodItemActive { border-color: #6366f1; background: #eef2ff; }
+.periodNo {
+    font-size: 13px; font-weight: 700; color: #6366f1;
+    background: #eef2ff; border-radius: 8px; padding: 6px 10px; flex-shrink: 0;
+}
+.periodMain { display: flex; flex-direction: column; flex: 1; }
+.periodSubject { font-size: 15px; font-weight: 600; color: #0f172a; }
+.periodClass { font-size: 13px; color: #64748b; }
+.periodTime { font-size: 13px; color: #94a3b8; font-variant-numeric: tabular-nums; }
+.subBadge {
+    font-size: 11px; font-weight: 600; color: #b45309;
+    background: #fef3c7; padding: 3px 8px; border-radius: 999px;
+}
+
+/* roster table */
+.rosterTable { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rosterTable th, .rosterTable td {
+    padding: 10px 12px; text-align: left; border-bottom: 1px solid #f1f5f9;
+}
+.rosterTable thead th {
+    font-size: 12px; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: 0.02em; background: #f8fafc;
+}
+.strong { font-weight: 500; color: #0f172a; }
+
+.toggle { display: inline-flex; gap: 6px; }
+.toggleBtn {
+    padding: 6px 16px; border: 1px solid #cbd5e1; border-radius: 8px;
+    background: #fff; font-size: 13px; font-weight: 600; color: #64748b;
+    cursor: pointer; transition: all 0.12s;
+}
+.toggleBtn:hover { border-color: #94a3b8; }
+.presentOn {
+    background: #dcfce7; border-color: #22c55e; color: #15803d;
+}
+.absentOn {
+    background: #fee2e2; border-color: #ef4444; color: #b91c1c;
+}
+
+.saveBtn {
+    margin-top: 18px; padding: 11px 22px;
+    background: #6366f1; color: #fff; border: none; border-radius: 8px;
+    font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.saveBtn:hover { background: #4f46e5; }
+.saveBtn:disabled { opacity: 0.6; cursor: default; }
+
+.message {
+    padding: 10px 14px; border-radius: 8px; font-size: 14px; margin-bottom: 14px;
+}
+.messageOk { background: #dcfce7; color: #15803d; }
+.messageErr { background: #fee2e2; color: #b91c1c; }

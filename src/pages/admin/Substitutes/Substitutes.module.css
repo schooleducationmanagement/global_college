@@ -1,0 +1,183 @@
+.header {
+    margin-bottom: 24px;
+}
+
+.header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.pickerBar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.pickerGroup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pickerGroup label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+}
+
+.pickerBar select,
+.pickerBar input {
+    padding: 9px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+}
+
+.pickerBar select:focus,
+.pickerBar input:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.weekdayTag {
+    font-size: 13px;
+    color: #64748b;
+    background: #f1f5f9;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.cardHead {
+    padding: 16px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.cardHead h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 150px 1fr 1fr 130px;
+    gap: 16px;
+    align-items: center;
+    padding: 14px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.periodInfo .pName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.periodInfo .pTime {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.subjTeacher .subj {
+    font-size: 14px;
+    color: #0f172a;
+    font-weight: 500;
+}
+
+.subjTeacher .regular {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.regularStruck {
+    text-decoration: line-through;
+    color: #cbd5e1 !important;
+}
+
+.subSelect {
+    width: 100%;
+    padding: 9px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.subSelect:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.subActive {
+    border-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.statusTag {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+    text-align: center;
+}
+
+.statusNormal {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+.statusSub {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.clearBtn {
+    padding: 5px 10px;
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.clearBtn:hover {
+    background: #fef2f2;
+}
+
+.placeholder {
+    background: #fff;
+    border: 1px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 56px 20px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}

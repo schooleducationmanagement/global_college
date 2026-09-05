@@ -1,0 +1,811 @@
+.header {
+    margin-bottom: 24px;
+}
+
+.header h2 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.header p {
+    color: #64748b;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+/* Tabs */
+.tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.tab {
+    padding: 10px 18px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover {
+    color: #334155;
+}
+
+.tabActive {
+    color: #4f46e5;
+    border-bottom-color: #4f46e5;
+}
+
+/* Layout */
+.grid {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    overflow: hidden;
+}
+
+.cardHead {
+    padding: 18px 22px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.cardHead h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.cardBody {
+    padding: 22px;
+}
+
+/* Form */
+.formTwoCol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+@media (max-width: 560px) {
+    .formTwoCol {
+        grid-template-columns: 1fr;
+    }
+}
+
+.formRow {
+    margin-bottom: 16px;
+}
+
+.formRow label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.formRow input,
+.formRow select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.formRow input:focus,
+.formRow select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.submitBtn {
+    margin-top: 8px;
+    width: 100%;
+    padding: 11px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.submitBtn:hover {
+    background: #4338ca;
+}
+
+.submitBtn:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+}
+
+.smallBtn {
+    padding: 9px 16px;
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.smallBtn:hover {
+    background: #4338ca;
+}
+
+.smallBtn:disabled {
+    background: #a5b4fc;
+    cursor: not-allowed;
+}
+
+/* Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 22px 0 16px;
+}
+
+.divider span {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.divider::before,
+.divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #e2e8f0;
+}
+
+.divider span {
+    padding: 0 12px;
+}
+
+/* Exam list (left) */
+.examList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.examRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.examRow:hover {
+    background: #f8fafc;
+}
+
+.examRowActive {
+    border-color: #6366f1;
+    background: #eef2ff;
+}
+
+.examName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.examMeta {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+/* Workspace sections */
+.section {
+    padding: 18px 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.section:first-of-type {
+    padding-top: 0;
+}
+
+.sectionTitle {
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+}
+
+.inlineRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.inlineRow select {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+}
+
+/* Chips */
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 6px 5px 12px;
+    background: #f1f5f9;
+    border-radius: 999px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.chip button {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: #cbd5e1;
+    color: #fff;
+    font-size: 11px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.chip button:hover {
+    background: #94a3b8;
+}
+
+/* Table */
+.dataTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 4px;
+}
+
+.dataTable th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dataTable td {
+    padding: 12px;
+    font-size: 14px;
+    color: #334155;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.dataTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.strong {
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.muted {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.hint {
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 8px;
+}
+
+.maxHint {
+    font-size: 13px;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+
+.markInput {
+    width: 90px;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 7px;
+    font-size: 14px;
+    color: #0f172a;
+}
+
+.markInput:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+/* Delete button */
+.deleteBtn {
+    padding: 6px 12px;
+    background: #fff;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    border-radius: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.deleteBtn:hover {
+    background: #fef2f2;
+}
+
+/* Messages */
+.message {
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.messageOk {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+}
+
+.messageErr {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* Results */
+.summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    padding: 14px 16px;
+    background: #f8fafc;
+    border-radius: 9px;
+    margin-bottom: 16px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.summary strong {
+    color: #0f172a;
+}
+
+.passTag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #ecfdf5;
+    color: #047857;
+}
+
+.failTag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* ===== list header count ===== */
+.cardHead h3 span {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* ===== exam list row actions ===== */
+.examRowActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.openHint {
+    font-size: 13px;
+    color: #6366f1;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.examRow:hover .openHint {
+    opacity: 1;
+}
+
+/* ===== workspace bar (inside a selected exam) ===== */
+.workspaceBar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.backBtn {
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #475569;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.backBtn:hover {
+    background: #f8fafc;
+    border-color: #94a3b8;
+}
+
+.workspaceTitle {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.workspaceName {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.01em;
+}
+
+.workspaceMeta {
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* ===== add-class bar ===== */
+.addClassBar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.addClassBar select {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+}
+
+/* ===== collapsible class sections ===== */
+.classSections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.classSection {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.classSectionHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.collapseToggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    flex: 1;
+    text-align: left;
+}
+
+.caret {
+    color: #94a3b8;
+    font-size: 12px;
+    width: 12px;
+}
+
+.className {
+    font-size: 15px;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.paperCount {
+    font-size: 12px;
+    color: #94a3b8;
+    background: #eef2ff;
+    color: #6366f1;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+.classSectionBody {
+    padding: 14px;
+}
+
+/* ===== add-subject row inside a class ===== */
+.addSubjectRow {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.addSubjectRow select,
+.addSubjectRow input {
+    padding: 9px 11px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+}
+
+.addSubjectRow select {
+    flex: 1;
+    min-width: 160px;
+}
+
+.marksInput {
+    width: 80px;
+}
+
+.timeInput {
+    width: 110px;
+}
+
+.classEmpty {
+    padding: 16px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+/* ===== scores tab pickers ===== */
+.scorePickers {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.scorePickers .formRow {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.scorePickers select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #0f172a;
+    background: #fff;
+}
+
+.scorePickers select:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
+
+/* ===== results tab ===== */
+.legend {
+    display: flex;
+    gap: 18px;
+    margin: 14px 0;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.statusDot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.dotPass {
+    background: #22c55e;
+}
+
+.dotFail {
+    background: #ef4444;
+}
+
+.dotIncomplete {
+    background: #cbd5e1;
+}
+
+.resultScroll {
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+}
+
+.resultTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.resultTable th,
+.resultTable td {
+    padding: 10px 12px;
+    text-align: center;
+    border-bottom: 1px solid #f1f5f9;
+    white-space: nowrap;
+}
+
+.resultTable thead th {
+    background: #f8fafc;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.thSub {
+    display: block;
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+    text-transform: none;
+}
+
+/* first column: student name, left-aligned, sticky while scrolling */
+.stickyCol {
+    position: sticky;
+    left: 0;
+    background: #fff;
+    text-align: left !important;
+    z-index: 1;
+    font-weight: 500;
+    color: #0f172a;
+}
+
+.resultTable thead .stickyCol,
+.resultTable tfoot .stickyCol {
+    background: #f8fafc;
+}
+
+.rollNo {
+    color: #94a3b8;
+    font-variant-numeric: tabular-nums;
+    margin-right: 6px;
+}
+
+.cellPass {
+    color: #0f172a;
+}
+
+.cellFail {
+    color: #ef4444;
+    font-weight: 600;
+    background: #fef2f2;
+}
+
+.blankCell {
+    color: #cbd5e1;
+}
+
+.rowSelected td {
+    background: #eef2ff;
+}
+
+.rowSelected .stickyCol {
+    background: #eef2ff;
+}
+
+.resultTable tbody tr {
+    cursor: pointer;
+}
+
+.resultTable tbody tr:hover td {
+    background: #f8fafc;
+}
+
+.resultTable tbody tr:hover .stickyCol {
+    background: #f8fafc;
+}
+
+.summaryRow td {
+    background: #f8fafc;
+    font-size: 13px;
+    color: #475569;
+    font-weight: 500;
+    border-top: 1px solid #e2e8f0;
+}
