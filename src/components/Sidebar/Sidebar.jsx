@@ -1,55 +1,128 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import styles from './Sidebar.module.css'
+import s from './Sidebar.module.css'
 
-function Sidebar() {
-    const { user } = useAuth()
+// Admin nav — grouped like the school app
+const adminGroups = [
+    {
+        section: 'Overview',
+        items: [
+            { to: '/admin', label: 'Dashboard', icon: '⊞', end: true },
+            { to: '/admin/announcements', label: 'Announcements', icon: '📢' },
+        ],
+    },
+    {
+        section: 'Setup',
+        items: [
+            { to: '/admin/classes', label: 'Classes & Subjects', icon: '🎓' },
+            { to: '/admin/teachers', label: 'Create Teachers', icon: '👤' },
+            { to: '/admin/students', label: 'Create Students', icon: '👥' },
+            { to: '/admin/teacher-assignments', label: 'Teacher Assignments', icon: '📋' },
+        ],
+    },
+    {
+        section: 'Timetable',
+        items: [
+            { to: '/admin/timetable', label: 'Timetable', icon: '📅' },
+            { to: '/admin/substitutes', label: 'Substitutes', icon: '🔁' },
+        ],
+    },
+    {
+        section: 'Academics',
+        items: [
+            { to: '/admin/attendance', label: 'Attendance', icon: '✅' },
+            { to: '/admin/exams', label: 'Exams', icon: '📝' },
+        ],
+    },
+]
+
+// Teacher nav
+const teacherGroups = [
+    {
+        section: 'Overview',
+        items: [
+            { to: '/teacher', label: 'Dashboard', icon: '⊞', end: true },
+            { to: '/teacher/announcements', label: 'Announcements', icon: '📢' },
+        ],
+    },
+    {
+        section: 'Teaching',
+        items: [
+            { to: '/teacher/attendance', label: 'Attendance', icon: '✅' },
+            { to: '/teacher/timetable', label: 'Timetable', icon: '📅' },
+            { to: '/teacher/exams', label: 'Exams', icon: '📝' },
+        ],
+    },
+]
+
+function Sidebar({ collapsed = false, onToggle, onNavClick }) {
+    const { user, logout } = useAuth()
+    const navigate = useNavigate()
     const isAdmin = user?.role === 'admin'
-    const base = isAdmin ? '/admin' : '/teacher'
+    const groups = isAdmin ? adminGroups : teacherGroups
+    const portal = isAdmin ? 'Admin Portal' : 'Teacher Portal'
 
-    // Admin navigation (full access), all under /admin
-    const adminLinks = [
-        { to: '/admin', label: 'Dashboard', end: true },
-        { to: '/admin/users', label: 'Users' },
-        { to: '/admin/classes', label: 'Classes' },
-        { to: '/admin/subjects', label: 'Subjects' },
-        { to: '/admin/timetable', label: 'Timetable' },
-        { to: '/admin/exams', label: 'Exams' },
-        { to: '/admin/attendance', label: 'Attendance' },
-        { to: '/admin/announcements', label: 'Announcements' },
-        { to: '/admin/teacher-assignments', label: 'Teacher Assignments' },
-        { to: '/admin/substitutes', label: 'Substitutes' },
-    ]
-
-    // Teacher navigation (limited), all under /teacher
-    const teacherLinks = [
-        { to: '/teacher', label: 'Dashboard', end: true },
-        { to: '/teacher/attendance', label: 'Attendance' },
-        { to: '/teacher/timetable', label: 'Timetable' },
-        { to: '/teacher/exams', label: 'Exams' },
-        { to: '/teacher/announcements', label: 'Announcements' },
-    ]
-
-    const links = isAdmin ? adminLinks : teacherLinks
+    function handleLogout() {
+        logout()
+        navigate('/login')
+    }
 
     return (
-        <aside className={styles.sidebar}>
-            <div className={styles.title}>School MS</div>
-            <nav>
-                {links.map((link) => (
-                    <NavLink
-                        key={link.to}
-                        to={link.to}
-                        end={link.end || false}
-                        className={({ isActive }) =>
-                            `${styles.link} ${isActive ? styles.active : ''}`
-                        }
-                    >
-                        {link.label}
-                    </NavLink>
-                ))}
-            </nav>
-        </aside>
+        <>
+            {!collapsed && onToggle && (
+                <div className={s.backdrop} onClick={onToggle} aria-hidden="true" />
+            )}
+
+            <aside className={`${s.sidebar} ${collapsed ? s.collapsed : ''}`}>
+                <div className={s.header}>
+                    <div className={s.logo}>
+                        <span className={s.logoIcon}>E</span>
+                        <div className={s.logoText}>
+                            <p className={s.logoName}>EduCore</p>
+                            <p className={s.logoSub}>{portal}</p>
+                        </div>
+                    </div>
+                    {onToggle && (
+                        <button
+                            className={s.toggleBtn}
+                            onClick={onToggle}
+                            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        >
+                            {collapsed ? '›' : '‹'}
+                        </button>
+                    )}
+                </div>
+
+                <nav className={s.nav}>
+                    {groups.map(group => (
+                        <div key={group.section}>
+                            <div className={s.section}>{group.section}</div>
+                            {group.items.map(link => (
+                                <NavLink
+                                    key={link.to}
+                                    to={link.to}
+                                    end={link.end || false}
+                                    className={({ isActive }) => `${s.item} ${isActive ? s.active : ''}`}
+                                    onClick={onNavClick}
+                                    title={collapsed ? link.label : undefined}
+                                >
+                                    <span className={s.icon}>{link.icon}</span>
+                                    <span className={s.label}>{link.label}</span>
+                                </NavLink>
+                            ))}
+                        </div>
+                    ))}
+                </nav>
+
+                <div className={s.footer}>
+                    <button className={s.item} onClick={handleLogout} title={collapsed ? 'Logout' : undefined} style={{ width: '100%', background: 'none', border: 'none', cursor: 'pointer' }}>
+                        <span className={s.icon}>🚪</span>
+                        <span className={s.label}>Logout</span>
+                    </button>
+                </div>
+            </aside>
+        </>
     )
 }
 

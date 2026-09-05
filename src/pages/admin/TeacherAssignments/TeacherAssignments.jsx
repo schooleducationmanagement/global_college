@@ -1,198 +1,210 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../../../supabaseClient'
-import styles from './TeacherAssignments.module.css'
+import s from '../../../components/PageShell/PageShell.module.css'
 
-function TeacherAssignments() {
-    const [teacherId, setTeacherId] = useState('')
-    const [subjectId, setSubjectId] = useState('')
-    const [classId, setClassId] = useState('')
+const EMPTY = { teacher_id: '', class_id: '', subject_id: '' }
 
-    const [teachers, setTeachers] = useState([])
-    const [subjects, setSubjects] = useState([])
-    const [classes, setClasses] = useState([])
+function classLabel(c) {
+    if (!c) return '—'
+    return `${c.program} · Sem ${c.semester} · ${c.section}`
+}
+
+export default function TeacherAssignments() {
     const [assignments, setAssignments] = useState([])
-
-    const [message, setMessage] = useState(null)
+    const [teachers, setTeachers] = useState([])
+    const [classes, setClasses] = useState([])
+    const [allSubjects, setAllSubjects] = useState([])
+    const [filteredSubs, setFilteredSubs] = useState([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+    const [modal, setModal] = useState(false)
+    const [form, setForm] = useState(EMPTY)
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => {
-        fetchDropdowns()
-        fetchAssignments()
-    }, [])
+    useEffect(() => { fetchAll() }, [])
 
-    async function fetchDropdowns() {
-        const [t, s, c] = await Promise.all([
+    async function fetchAll() {
+        setLoading(true)
+        const [a, t, cls, sub] = await Promise.all([
+            supabase
+                .from('teacher_subject_class')
+                .select(`
+                    id,
+                    teachers ( teacher_id, name ),
+                    subjects ( subject_id, subject_name ),
+                    classes ( class_id, program, semester, section )
+                `)
+                .order('id'),
             supabase.from('teachers').select('teacher_id, name').order('name'),
-            supabase.from('subjects').select('subject_id, subject_name').order('subject_name'),
-            supabase.from('classes').select('class_id, program, semester, section').order('program'),
+            supabase.from('classes').select('class_id, program, semester, section').order('program').order('semester').order('section'),
+            supabase.from('subjects').select('subject_id, subject_name, program, semester').order('subject_name'),
         ])
-        if (!t.error) setTeachers(t.data)
-        if (!s.error) setSubjects(s.data)
-        if (!c.error) setClasses(c.data)
+        if (a.error) setError(a.error.message)
+        else setAssignments(a.data || [])
+        if (t.data) setTeachers(t.data)
+        if (cls.data) setClasses(cls.data)
+        if (sub.data) setAllSubjects(sub.data)
+        setLoading(false)
     }
 
-    // Pull each assignment with the related names in one query (joins).
-    async function fetchAssignments() {
-        const { data, error } = await supabase
-            .from('teacher_subject_class')
-            .select(`
-        id,
-        teacher_id,
-        teachers ( name ),
-        subjects ( subject_name ),
-        classes ( program, semester, section )
-      `)
-            .order('teacher_id')
-        if (!error) setAssignments(data)
+    function openAdd() { setForm(EMPTY); setFilteredSubs([]); setError(null); setModal(true) }
+    function closeModal() { if (!saving) { setModal(false); setError(null); setFilteredSubs([]) } }
+
+    function handleTeacherChange(e) { setForm(f => ({ ...f, teacher_id: e.target.value })) }
+
+    function handleClassChange(e) {
+        const classId = e.target.value
+        const cls = classes.find(c => String(c.class_id) === String(classId))
+        // college subjects belong to program + semester (not class_id)
+        const subs = cls
+            ? allSubjects.filter(sub => sub.program === cls.program && sub.semester === cls.semester)
+            : []
+        setFilteredSubs(subs)
+        setForm(f => ({ ...f, class_id: classId, subject_id: '' }))
     }
 
-    async function handleCreate() {
-        setMessage(null)
+    function handleSubjectChange(e) { setForm(f => ({ ...f, subject_id: e.target.value })) }
 
-        if (!teacherId || !subjectId || !classId) {
-            setMessage({ type: 'err', text: 'Please choose a teacher, subject, and class.' })
+    async function handleSave() {
+        if (!form.teacher_id || !form.class_id || !form.subject_id) {
+            setError('Please select a teacher, class and subject.')
             return
         }
-
-        setSaving(true)
-
+        setSaving(true); setError(null)
         const { error } = await supabase.from('teacher_subject_class').insert({
-            teacher_id: teacherId,
-            subject_id: subjectId,
-            class_id: classId,
+            teacher_id: form.teacher_id,
+            subject_id: form.subject_id,
+            class_id: form.class_id,
         })
-
         setSaving(false)
-
         if (error) {
-            if (error.code === '23505') {
-                setMessage({ type: 'err', text: 'This teacher is already assigned that subject for that class.' })
-            } else {
-                setMessage({ type: 'err', text: 'Could not save assignment: ' + error.message })
-            }
+            setError(error.code === '23505'
+                ? 'This teacher is already assigned that subject for that class.'
+                : error.message)
             return
         }
-
-        setMessage({ type: 'ok', text: 'Assignment added.' })
-        setSubjectId('')
-        setClassId('')
-        // keep the teacher selected, so adding several for one teacher is quick
-        fetchAssignments()
+        closeModal(); fetchAll()
     }
 
     async function handleDelete(id) {
-        if (!window.confirm('Remove this assignment?')) return
+        if (!confirm('Remove this assignment?')) return
         const { error } = await supabase.from('teacher_subject_class').delete().eq('id', id)
-        if (error) setMessage({ type: 'err', text: 'Could not remove: ' + error.message })
-        else fetchAssignments()
+        if (error) setError(error.message)
+        else fetchAll()
     }
-
-    // Group the flat assignment rows by teacher for display.
-    const grouped = assignments.reduce((acc, a) => {
-        const key = a.teacher_id
-        if (!acc[key]) {
-            acc[key] = { name: a.teachers?.name || 'Unknown teacher', items: [] }
-        }
-        acc[key].items.push(a)
-        return acc
-    }, {})
 
     return (
         <div>
-            <div className={styles.header}>
-                <h2>Teacher assignments</h2>
-                <p>Assign which subject each teacher teaches, and to which class.</p>
+            <div className={s.header}>
+                <div>
+                    <div className={s.count}>{assignments.length} assignment{assignments.length !== 1 ? 's' : ''}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 2 }}>
+                        Pick a class to filter its subjects, then assign a teacher.
+                    </div>
+                </div>
+                <button className={s.btnPrimary} onClick={openAdd}>+ Add Assignment</button>
             </div>
 
-            <div className={styles.grid}>
-                {/* LEFT: create form */}
-                <div className={styles.card}>
-                    <div className={styles.cardHead}>
-                        <h3>Add assignment</h3>
-                    </div>
-                    <div className={styles.cardBody}>
-                        <div className={styles.formRow}>
-                            <label>Teacher</label>
-                            <select value={teacherId} onChange={(e) => setTeacherId(e.target.value)}>
-                                <option value="">Select a teacher</option>
-                                {teachers.map((t) => (
+            {error && !modal && <div className={s.error}>{error}</div>}
+
+            {loading ? (
+                <div className={s.loading}>Loading assignments...</div>
+            ) : (
+                <div className={s.tableWrap}>
+                    <table className={s.table}>
+                        <thead>
+                            <tr>
+                                <th>Teacher</th>
+                                <th>Subject</th>
+                                <th>Class</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {assignments.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4}>
+                                        <div className={s.empty}>
+                                            <div className={s.emptyText}>
+                                                No assignments yet.<br />
+                                                Add classes + subjects first, then assign teachers here.
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                assignments.map(a => (
+                                    <tr key={a.id}>
+                                        <td><strong>{a.teachers?.name || '—'}</strong></td>
+                                        <td>{a.subjects?.subject_name || '—'}</td>
+                                        <td><span className={`${s.badge} ${s.badgeBlue}`}>{classLabel(a.classes)}</span></td>
+                                        <td>
+                                            <button className={`${s.btnDanger} ${s.btnSm}`} onClick={() => handleDelete(a.id)}>Remove</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {modal && (
+                <div className={s.overlay} onClick={e => e.target === e.currentTarget && closeModal()}>
+                    <div className={s.modal}>
+                        <h2 className={s.modalTitle}>Add Assignment</h2>
+                        {error && <div className={s.error}>{error}</div>}
+
+                        <div className={s.field}>
+                            <label className={s.label}>1. Select Teacher</label>
+                            <select className={s.select} value={form.teacher_id} onChange={handleTeacherChange}>
+                                <option value="">— Select Teacher —</option>
+                                {teachers.map(t => (
                                     <option key={t.teacher_id} value={t.teacher_id}>{t.name}</option>
                                 ))}
                             </select>
                         </div>
-                        <div className={styles.formRow}>
-                            <label>Subject</label>
-                            <select value={subjectId} onChange={(e) => setSubjectId(e.target.value)}>
-                                <option value="">Select a subject</option>
-                                {subjects.map((s) => (
-                                    <option key={s.subject_id} value={s.subject_id}>{s.subject_name}</option>
-                                ))}
-                            </select>
-                        </div>
-                        <div className={styles.formRow}>
-                            <label>Class</label>
-                            <select value={classId} onChange={(e) => setClassId(e.target.value)}>
-                                <option value="">Select a class</option>
-                                {classes.map((c) => (
-                                    <option key={c.class_id} value={c.class_id}>
-                                        {c.program} · Sem {c.semester} · {c.section}
-                                    </option>
+
+                        <div className={s.field}>
+                            <label className={s.label}>2. Select Class</label>
+                            <select className={s.select} value={form.class_id} onChange={handleClassChange}>
+                                <option value="">— Select Class —</option>
+                                {classes.map(c => (
+                                    <option key={c.class_id} value={c.class_id}>{classLabel(c)}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {message && (
-                            <div className={`${styles.message} ${message.type === 'ok' ? styles.messageOk : styles.messageErr}`}>
-                                {message.text}
-                            </div>
-                        )}
-
-                        <button className={styles.submitBtn} onClick={handleCreate} disabled={saving}>
-                            {saving ? 'Adding…' : 'Add assignment'}
-                        </button>
-
-                        <p className={styles.hint}>
-                            Tip: the teacher stays selected after adding, so you can quickly add several
-                            subjects/classes for the same teacher.
-                        </p>
-                    </div>
-                </div>
-
-                {/* RIGHT: grouped list */}
-                <div className={styles.card}>
-                    <div className={styles.cardHead}>
-                        <h3>Current assignments <span>· {assignments.length}</span></h3>
-                    </div>
-
-                    {assignments.length === 0 ? (
-                        <div className={styles.empty}>No assignments yet. Add the first one on the left.</div>
-                    ) : (
-                        Object.entries(grouped).map(([teacherKey, group]) => (
-                            <div key={teacherKey} className={styles.teacherGroup}>
-                                <div className={styles.teacherName}>{group.name}</div>
-                                {group.items.map((a) => (
-                                    <div key={a.id} className={styles.assignRow}>
-                                        <div className={styles.assignInfo}>
-                                            <span className={styles.subjectPill}>
-                                                {a.subjects?.subject_name || '—'}
-                                            </span>
-                                            <span className={styles.arrow}>→</span>
-                                            <span className={styles.classText}>
-                                                {a.classes ? `${a.classes.program} · Sem ${a.classes.semester} · ${a.classes.section}` : '—'}
-                                            </span>
-                                        </div>
-                                        <button className={styles.deleteBtn} onClick={() => handleDelete(a.id)}>
-                                            Remove
-                                        </button>
-                                    </div>
+                        <div className={s.field}>
+                            <label className={s.label}>3. Select Subject</label>
+                            <select
+                                className={s.select}
+                                value={form.subject_id}
+                                onChange={handleSubjectChange}
+                                disabled={!form.class_id}
+                            >
+                                <option value="">
+                                    {!form.class_id
+                                        ? '— Select a class first —'
+                                        : filteredSubs.length === 0
+                                            ? '— No subjects for this program/semester —'
+                                            : '— Select Subject —'}
+                                </option>
+                                {filteredSubs.map(sub => (
+                                    <option key={sub.subject_id} value={sub.subject_id}>{sub.subject_name}</option>
                                 ))}
-                            </div>
-                        ))
-                    )}
+                            </select>
+                        </div>
+
+                        <div className={s.modalFooter}>
+                            <button className={s.btnGhost} onClick={closeModal}>Cancel</button>
+                            <button className={s.btnPrimary} onClick={handleSave} disabled={saving}>
+                                {saving ? 'Saving...' : 'Add Assignment'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
 }
-
-export default TeacherAssignments

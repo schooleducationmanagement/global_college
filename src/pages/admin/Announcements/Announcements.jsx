@@ -3,25 +3,33 @@ import { supabase } from '../../../supabaseClient'
 import { useAuth } from '../../../context/AuthContext'
 import styles from './Announcements.module.css'
 
+/* ------------------------------------------------------------------ */
+/*  Reference data                                                     */
+/* ------------------------------------------------------------------ */
 const AUDIENCES = [
-    { value: 'all', label: 'Everyone' },
-    { value: 'parents', label: 'Parents' },
+    { value: 'all', label: 'Everyone (Teachers + Students)' },
     { value: 'teachers', label: 'Teachers' },
+    { value: 'parents', label: 'Parents' },
     { value: 'class', label: 'Specific class' },
 ]
 
-const CATEGORIES = [
-    { value: 'notice', label: 'Notice' },
-    { value: 'event', label: 'Event' },
-    { value: 'exam', label: 'Exam' },
-    { value: 'holiday', label: 'Holiday' },
+const MONTHS = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+]
+// Calendar starts on Monday, to match the screenshot (Mon..Sun)
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+const TIME_FILTERS = [
+    { value: 'all', label: 'All-Time' },
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'past', label: 'Past' },
+    { value: 'month', label: 'This Month' },
 ]
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December']
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
-
-// --- date helpers (all local, no timezone surprises) ---
+/* ------------------------------------------------------------------ */
+/*  Small helpers (all local, no timezone surprises)                   */
+/* ------------------------------------------------------------------ */
 function ymd(d) {
     const y = d.getFullYear()
     const m = String(d.getMonth() + 1).padStart(2, '0')
@@ -32,40 +40,44 @@ function classText(c) {
     if (!c) return null
     return `${c.program} · Sem ${c.semester} · ${c.section}`
 }
-function categoryLabel(v) {
-    return CATEGORIES.find((c) => c.value === v)?.label || v
-}
 function audienceLabel(v) {
     return AUDIENCES.find((a) => a.value === v)?.label || v
 }
+function formatDate(str) {
+    if (!str) return '—'
+    const d = new Date(str + 'T00:00:00')
+    return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
+/* ------------------------------------------------------------------ */
+/*  Component                                                          */
+/* ------------------------------------------------------------------ */
 function Announcements() {
     const { user } = useAuth()
-    const isAdmin = user?.role === 'admin'
 
     const today = new Date()
     const [viewYear, setViewYear] = useState(today.getFullYear())
     const [viewMonth, setViewMonth] = useState(today.getMonth()) // 0-11
-    const [selectedDate, setSelectedDate] = useState(ymd(today))  // 'YYYY-MM-DD'
+    const [selectedDate, setSelectedDate] = useState(null) // 'YYYY-MM-DD' | null
 
     // data
     const [announcements, setAnnouncements] = useState([])
-    const [examItems, setExamItems] = useState([])
     const [classes, setClasses] = useState([])
-    const [myCoordClassIds, setMyCoordClassIds] = useState([])
     const [loading, setLoading] = useState(true)
+    const [connected, setConnected] = useState(true)
 
-    // form
+    // list filter
+    const [timeFilter, setTimeFilter] = useState('all')
+
+    // modal + form
+    const [modalOpen, setModalOpen] = useState(false)
     const [title, setTitle] = useState('')
     const [body, setBody] = useState('')
-    const [category, setCategory] = useState('notice')
     const [audience, setAudience] = useState('all')
     const [selectedClassIds, setSelectedClassIds] = useState([])
-    const [startDate, setStartDate] = useState(ymd(today))
+    const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
-    const [attachmentUrl, setAttachmentUrl] = useState('')
-
-    const [message, setMessage] = useState(null)
+    const [formError, setFormError] = useState('')
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {
@@ -74,9 +86,9 @@ function Announcements() {
     }, [])
 
     async function init() {
+        setLoading(true)
         await fetchClasses()
-        await resolveCoordinatorClasses()
-        await Promise.all([fetchAnnouncements(), fetchExams()])
+        await fetchAnnouncements()
         setLoading(false)
     }
 
@@ -88,52 +100,64 @@ function Announcements() {
         if (!error) setClasses(data || [])
     }
 
-    async function resolveCoordinatorClasses() {
-        if (!user || user.role !== 'teacher') { setMyCoordClassIds([]); return }
-        const { data: teacher } = await supabase
-            .from('teachers').select('teacher_id').eq('user_id', user.user_id).single()
-        if (!teacher) { setMyCoordClassIds([]); return }
-        const { data: coord } = await supabase
-            .from('classes').select('class_id').eq('class_teacher_id', teacher.teacher_id)
-        setMyCoordClassIds((coord || []).map((c) => c.class_id))
-    }
-
     async function fetchAnnouncements() {
         const { data, error } = await supabase
             .from('announcements')
-            .select('*, announcement_classes ( class_id, classes ( class_id, program, semester, section ) ), users ( email )')
+            .select(
+                '*, announcement_classes ( class_id, classes ( class_id, program, semester, section ) ), users ( email )'
+            )
             .order('created_at', { ascending: false })
-        if (!error) setAnnouncements(data || [])
+        if (error) {
+            setConnected(false)
+            return
+        }
+        setConnected(true)
+        setAnnouncements(data || [])
     }
 
-    // Exam papers as per-date items (Option A: subject level)
-    async function fetchExams() {
-        const { data, error } = await supabase
-            .from('exam_subjects')
-            .select('id, exam_date, start_time, max_marks, exams ( exam_name ), subjects ( subject_name ), classes ( program, semester, section )')
-            .not('exam_date', 'is', null)
-        if (!error) setExamItems(data || [])
-    }
+    /* ---------- derived ---------- */
+    const latest = announcements[0] || null
 
-    // classes linked to an announcement (via junction table)
     function linkedClasses(a) {
         return (a.announcement_classes || []).map((ac) => ac.classes).filter(Boolean)
     }
-    function linkedClassIds(a) {
-        return (a.announcement_classes || []).map((ac) => ac.class_id)
-    }
 
-    // ---- visibility gating for announcements ----
-    function canSee(a) {
-        if (isAdmin) return true
-        if (a.audience === 'all' || a.audience === 'teachers') return true
-        if (a.audience === 'class') {
-            // visible if the teacher coordinates ANY of the linked classes
-            return linkedClassIds(a).some((id) => myCoordClassIds.includes(id))
-        }
-        return false
-    }
-    // does this announcement's date-range cover the given day?
+    // list respecting the time filter
+    const filteredList = useMemo(() => {
+        const todayStr = ymd(today)
+        const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
+        return announcements.filter((a) => {
+            const start = a.start_date || a.created_at?.slice(0, 10)
+            const end = a.end_date || start
+            if (!start) return timeFilter === 'all'
+            switch (timeFilter) {
+                case 'upcoming': return start >= todayStr
+                case 'past': return end < todayStr
+                case 'month': return start.startsWith(monthPrefix)
+                default: return true
+            }
+        })
+        // eslint-disable-next-line
+    }, [announcements, timeFilter, viewYear, viewMonth])
+
+    // days in the visible month that have any announcement covering them
+    const markedDays = useMemo(() => {
+        const set = new Set()
+        announcements.forEach((a) => {
+            const start = a.start_date || a.created_at?.slice(0, 10)
+            if (!start) return
+            const end = a.end_date || start
+            let d = new Date(start + 'T00:00:00')
+            const last = new Date(end + 'T00:00:00')
+            while (d <= last) {
+                set.add(ymd(d))
+                d.setDate(d.getDate() + 1)
+            }
+        })
+        return set
+    }, [announcements])
+
+    // announcements whose date range covers a given day string
     function coversDay(a, dayStr) {
         const start = a.start_date || a.created_at?.slice(0, 10)
         if (!start) return false
@@ -141,47 +165,20 @@ function Announcements() {
         return start <= dayStr && dayStr <= end
     }
 
-    // Build a map of day-strings -> Set of categories (for dot colors)
-    const markedDays = useMemo(() => {
-        const map = {}
-        const add = (day, cat) => {
-            if (!map[day]) map[day] = new Set()
-            map[day].add(cat)
-        }
-        announcements.filter((a) => canSee(a)).forEach((a) => {
-            const start = a.start_date || a.created_at?.slice(0, 10)
-            if (!start) return
-            const end = a.end_date || start
-            let d = new Date(start + 'T00:00:00')
-            const last = new Date(end + 'T00:00:00')
-            while (d <= last) {
-                add(ymd(d), a.category || 'notice')
-                d.setDate(d.getDate() + 1)
-            }
-        })
-        examItems.forEach((e) => {
-            if (e.exam_date) add(e.exam_date, 'exam')
-        })
-        return map
-        // eslint-disable-next-line
-    }, [announcements, examItems, myCoordClassIds, isAdmin])
+    // items for the currently selected day
+    const selectedDayItems = useMemo(() => {
+        if (!selectedDate) return []
+        return announcements.filter((a) => coversDay(a, selectedDate))
+    }, [announcements, selectedDate])
 
-    // Items for the selected day (merged + sorted, exams first)
-    const dayItems = useMemo(() => {
-        const anns = announcements
-            .filter((a) => canSee(a) && coversDay(a, selectedDate))
-            .map((a) => ({ kind: 'announcement', data: a }))
-        const exams = examItems
-            .filter((e) => e.exam_date === selectedDate)
-            .map((e) => ({ kind: 'exam', data: e }))
-        return [...exams, ...anns]
-        // eslint-disable-next-line
-    }, [announcements, examItems, selectedDate, myCoordClassIds, isAdmin])
+    // the announcement shown in the hero when a day is selected (first match)
+    const heroItem = selectedDayItems[0] || null
 
-    // ---- calendar grid ----
+    // Monday-first calendar grid
     const grid = useMemo(() => {
         const first = new Date(viewYear, viewMonth, 1)
-        const startDow = first.getDay()
+        // JS getDay: 0=Sun..6=Sat -> shift so Monday is column 0
+        const startDow = (first.getDay() + 6) % 7
         const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate()
         const cells = []
         for (let i = 0; i < startDow; i++) cells.push(null)
@@ -198,41 +195,39 @@ function Announcements() {
         else setViewMonth(viewMonth + 1)
     }
 
-    // ---- posting ----
-    function resetForm() {
-        setTitle(''); setBody(''); setCategory('notice'); setAudience('all')
-        setSelectedClassIds([]); setEndDate(''); setAttachmentUrl('')
-        setStartDate(selectedDate)
+    /* ---------- modal ---------- */
+    function openModal() {
+        setTitle(''); setBody(''); setAudience('all'); setSelectedClassIds([])
+        setStartDate(''); setEndDate(''); setFormError('')
+        setModalOpen(true)
+    }
+    function closeModal() {
+        if (saving) return
+        setModalOpen(false)
     }
 
-    async function handlePost() {
-        setMessage(null)
-        if (!title.trim() || !body.trim()) {
-            setMessage({ type: 'err', text: 'Title and body are required.' }); return
-        }
+    async function handleSave() {
+        setFormError('')
+        if (!title.trim()) { setFormError('Enter a title for the announcement.'); return }
+        if (!body.trim()) { setFormError('Enter a description.'); return }
         if (audience === 'class' && selectedClassIds.length === 0) {
-            setMessage({ type: 'err', text: 'Please choose at least one class for a class announcement.' }); return
+            setFormError('Choose at least one class.'); return
         }
-        if (!startDate) {
-            setMessage({ type: 'err', text: 'Please choose a start date.' }); return
-        }
-        if (endDate && endDate < startDate) {
-            setMessage({ type: 'err', text: 'End date cannot be before the start date.' }); return
+        if (startDate && endDate && endDate < startDate) {
+            setFormError('End date cannot be before the start date.'); return
         }
 
         setSaving(true)
         const row = {
             title: title.trim(),
             body: body.trim(),
-            category,
+            category: 'notice',
             audience,
-            start_date: startDate,
+            start_date: startDate || ymd(today),
             end_date: endDate || null,
-            attachment_url: attachmentUrl.trim() || null,
         }
         if (user?.user_id) row.posted_by = user.user_id
 
-        // 1) insert the announcement, get its id back
         const { data: created, error } = await supabase
             .from('announcements')
             .insert(row)
@@ -241,10 +236,10 @@ function Announcements() {
 
         if (error) {
             setSaving(false)
-            setMessage({ type: 'err', text: 'Could not post: ' + error.message }); return
+            setFormError(error.message || 'Could not save the announcement.')
+            return
         }
 
-        // 2) if class-targeted, link the selected classes via the junction table
         if (audience === 'class' && selectedClassIds.length > 0) {
             const links = selectedClassIds.map((cid) => ({
                 announcement_id: created.announcement_id,
@@ -252,202 +247,302 @@ function Announcements() {
             }))
             const { error: linkErr } = await supabase.from('announcement_classes').insert(links)
             if (linkErr) {
-                // roll back the announcement so we don't leave an orphan with no classes
                 await supabase.from('announcements').delete().eq('announcement_id', created.announcement_id)
                 setSaving(false)
-                setMessage({ type: 'err', text: 'Could not link classes: ' + linkErr.message }); return
+                setFormError('Saved the notice but could not link classes: ' + linkErr.message)
+                return
             }
         }
 
         setSaving(false)
-        setMessage({ type: 'ok', text: 'Announcement posted.' })
-        resetForm()
+        setModalOpen(false)
         fetchAnnouncements()
     }
 
     async function handleDelete(id) {
         if (!window.confirm('Delete this announcement? This cannot be undone.')) return
+        await supabase.from('announcement_classes').delete().eq('announcement_id', id)
         const { error } = await supabase.from('announcements').delete().eq('announcement_id', id)
-        if (error) setMessage({ type: 'err', text: 'Could not delete: ' + error.message })
-        else fetchAnnouncements()
+        if (!error) fetchAnnouncements()
     }
 
-    function badgeClass(cat) {
-        return `${styles.badge} ${styles['badge_' + cat] || styles.badge_notice}`
-    }
-    function formatDate(str) {
-        if (!str) return ''
-        const d = new Date(str + 'T00:00:00')
-        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
-    }
-
-    const selectedLabel = formatDate(selectedDate)
-
+    /* ---------------------------------------------------------------- */
     return (
-        <div>
-            <div className={styles.header}>
-                <h2>Notice board & calendar</h2>
-                <p>Select a date to see exams and announcements for that day. Post notices tied to event dates.</p>
-            </div>
-
-            <div className={styles.calGrid}>
-                {/* LEFT: calendar */}
-                <div className={styles.card}>
-                    <div className={styles.calHead}>
-                        <button className={styles.navBtn} onClick={prevMonth}>‹</button>
-                        <div className={styles.calTitle}>{MONTHS[viewMonth]} {viewYear}</div>
-                        <button className={styles.navBtn} onClick={nextMonth}>›</button>
-                    </div>
-                    <div className={styles.calBody}>
-                        <div className={styles.weekRow}>
-                            {WEEKDAYS.map((w) => <div key={w} className={styles.weekCell}>{w}</div>)}
-                        </div>
-                        <div className={styles.dayGrid}>
-                            {grid.map((cell, i) => {
-                                if (!cell) return <div key={i} className={styles.dayEmpty} />
-                                const str = ymd(cell)
-                                const isSel = str === selectedDate
-                                const isToday = str === ymd(today)
-                                const cats = markedDays[str]
-                                return (
-                                    <button
-                                        key={i}
-                                        className={`${styles.day} ${isSel ? styles.daySelected : ''} ${isToday ? styles.dayToday : ''}`}
-                                        onClick={() => setSelectedDate(str)}
-                                    >
-                                        <span>{cell.getDate()}</span>
-                                        {cats && (
-                                            <span className={styles.dots}>
-                                                {[...cats].slice(0, 4).map((c) => (
-                                                    <span key={c} className={`${styles.dot} ${styles['dot_' + c] || styles.dot_notice}`} />
-                                                ))}
-                                            </span>
-                                        )}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                        <div className={styles.legend}>
-                            {CATEGORIES.map((c) => (
-                                <span key={c.value} className={styles.legendItem}>
-                                    <span className={`${styles.dot} ${styles['dot_' + c.value]}`} /> {c.label}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
-                {/* RIGHT: selected day feed */}
-                <div className={styles.card}>
-                    <div className={styles.cardHead}>
-                        <h3>{selectedLabel} <span>· {dayItems.length} item(s)</span></h3>
-                    </div>
-                    {loading ? (
-                        <div className={styles.empty}>Loading…</div>
-                    ) : dayItems.length === 0 ? (
-                        <div className={styles.empty}>Nothing on this day.</div>
-                    ) : (
-                        <div className={styles.feed}>
-                            {dayItems.map((item) => {
-                                if (item.kind === 'exam') {
-                                    const e = item.data
-                                    return (
-                                        <div key={'ex' + e.id} className={styles.item}>
-                                            <div className={styles.itemTop}>
-                                                <div className={styles.itemTitle}>
-                                                    {e.subjects?.subject_name} exam
-                                                </div>
-                                                <span className={badgeClass('exam')}>Exam</span>
-                                            </div>
-                                            <div className={styles.itemBody}>
-                                                {e.exams?.exam_name}
-                                                {e.classes ? ` — ${classText(e.classes)}` : ''}
-                                                {e.start_time ? ` · ${e.start_time.slice(0, 5)}` : ''}
-                                                {e.max_marks != null ? ` · ${e.max_marks} marks` : ''}
-                                            </div>
-                                            <div className={styles.itemMeta}>
-                                                <span className={styles.muted}>From Exams schedule</span>
-                                            </div>
-                                        </div>
-                                    )
-                                }
-                                const a = item.data
-                                const range = a.end_date && a.end_date !== a.start_date
-                                    ? `${formatDate(a.start_date)} – ${formatDate(a.end_date)}`
-                                    : formatDate(a.start_date)
-                                return (
-                                    <div key={'an' + a.announcement_id} className={styles.item}>
-                                        <div className={styles.itemTop}>
-                                            <div className={styles.itemTitle}>{a.title}</div>
-                                            <span className={badgeClass(a.category || 'notice')}>
-                                                {categoryLabel(a.category || 'notice')}
+        <div className={styles.page}>
+            <div className={styles.topGrid}>
+                {/* Hero */}
+                <section className={styles.hero}>
+                    <div className={styles.heroInner}>
+                        {selectedDate ? (
+                            /* --- a date is selected: show that day's announcement --- */
+                            heroItem ? (
+                                <>
+                                    <span className={styles.heroEyebrow}>
+                                        Announcement · {formatDate(selectedDate)}
+                                    </span>
+                                    <h1 className={styles.heroTitle}>{heroItem.title}</h1>
+                                    <p className={styles.heroBody}>{heroItem.body}</p>
+                                    <div className={styles.heroDates}>
+                                        <div className={styles.heroDate}>
+                                            <span className={styles.heroDateLabel}>Start Date</span>
+                                            <span className={styles.heroDateValue}>
+                                                {formatDate(heroItem.start_date || heroItem.created_at?.slice(0, 10))}
                                             </span>
                                         </div>
-                                        <div className={styles.itemBody}>{a.body}</div>
-                                        {a.attachment_url && (
-                                            <a className={styles.attach} href={a.attachment_url} target="_blank" rel="noreferrer">
-                                                View attachment ↗
-                                            </a>
-                                        )}
-                                        <div className={styles.itemMeta}>
-                                            <span>
-                                                {audienceLabel(a.audience)}
-                                                {a.audience === 'class' && linkedClasses(a).length > 0
-                                                    ? ` · ${linkedClasses(a).map(classText).join(', ')}`
-                                                    : ''}
-                                                {' · '}{range}
-                                                {a.users?.email ? ` · ${a.users.email}` : ''}
+                                        <div className={styles.heroDate}>
+                                            <span className={styles.heroDateLabel}>End Date</span>
+                                            <span className={styles.heroDateValue}>
+                                                {formatDate(heroItem.end_date)}
                                             </span>
-                                            <button className={styles.deleteBtn} onClick={() => handleDelete(a.announcement_id)}>
-                                                Delete
-                                            </button>
                                         </div>
                                     </div>
-                                )
-                            })}
-                        </div>
-                    )}
+                                    <div className={styles.heroActions}>
+                                        <button className={styles.heroBtn} onClick={openModal}>Add Announcement</button>
+                                        <button className={styles.heroLink} onClick={() => setSelectedDate(null)}>
+                                            Back to latest
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <span className={styles.heroEyebrow}>
+                                        Announcement · {formatDate(selectedDate)}
+                                    </span>
+                                    <h1 className={styles.heroTitle}>No Announcement</h1>
+                                    <p className={styles.heroBody}>Nothing is scheduled on this day.</p>
+                                    <div className={styles.heroActions}>
+                                        <button className={styles.heroBtn} onClick={openModal}>Add Announcement</button>
+                                        <button className={styles.heroLink} onClick={() => setSelectedDate(null)}>
+                                            Back to latest
+                                        </button>
+                                    </div>
+                                </>
+                            )
+                        ) : (
+                            /* --- default: latest announcement --- */
+                            latest ? (
+                                <>
+                                    <span className={styles.heroEyebrow}>Latest Announcement</span>
+                                    <h1 className={styles.heroTitle}>{latest.title}</h1>
+                                    <p className={styles.heroBody}>{latest.body}</p>
+                                    <div className={styles.heroDates}>
+                                        <div className={styles.heroDate}>
+                                            <span className={styles.heroDateLabel}>Start Date</span>
+                                            <span className={styles.heroDateValue}>
+                                                {formatDate(latest.start_date || latest.created_at?.slice(0, 10))}
+                                            </span>
+                                        </div>
+                                        <div className={styles.heroDate}>
+                                            <span className={styles.heroDateLabel}>End Date</span>
+                                            <span className={styles.heroDateValue}>{formatDate(latest.end_date)}</span>
+                                        </div>
+                                    </div>
+                                    <button className={styles.heroBtn} onClick={openModal}>Add Announcement</button>
+                                </>
+                            ) : (
+                                <>
+                                    <span className={styles.heroEyebrow}>Latest Announcement</span>
+                                    <h1 className={styles.heroTitle}>No Announcements</h1>
+                                    <p className={styles.heroBody}>
+                                        All announcements will appear here. Click the button below to add your first one.
+                                    </p>
+                                    <button className={styles.heroBtn} onClick={openModal}>Add Announcement</button>
+                                </>
+                            )
+                        )}
+                    </div>
+                </section>
+
+                {/* Calendar */}
+                <section className={styles.calCard}>
+                    <div className={styles.calHead}>
+                        <button className={styles.calNav} onClick={prevMonth} aria-label="Previous month">‹</button>
+                        <div className={styles.calTitle}>{MONTHS[viewMonth]} {viewYear}</div>
+                        <button className={styles.calNav} onClick={nextMonth} aria-label="Next month">›</button>
+                    </div>
+                    <div className={styles.weekRow}>
+                        {WEEKDAYS.map((w) => (
+                            <div
+                                key={w}
+                                className={`${styles.weekCell} ${w === 'Sun' ? styles.weekEnd : ''}`}
+                            >{w}</div>
+                        ))}
+                    </div>
+                    <div className={styles.dayGrid}>
+                        {grid.map((cell, i) => {
+                            if (!cell) return <div key={i} className={styles.dayEmpty} />
+                            const str = ymd(cell)
+                            const isToday = str === ymd(today)
+                            const isSelected = str === selectedDate
+                            const isWeekend = cell.getDay() === 0 // Sunday
+                            const marked = markedDays.has(str)
+                            return (
+                                <button
+                                    key={i}
+                                    type="button"
+                                    className={[
+                                        styles.dayCell,
+                                        isToday ? styles.dayToday : '',
+                                        isSelected ? styles.daySelected : '',
+                                        isWeekend ? styles.dayWeekend : '',
+                                    ].join(' ')}
+                                    onClick={() => setSelectedDate(str)}
+                                >
+                                    <span className={styles.dayNum}>{cell.getDate()}</span>
+                                    {marked && <span className={styles.dayMark} />}
+                                </button>
+                            )
+                        })}
+                    </div>
+                    <div className={styles.calFoot}>
+                        <span className={styles.footTick} />
+                        <span className={styles.footLine} />
+                        <span className={styles.footTick} />
+                    </div>
+                </section>
+            </div>
+
+            {/* List */}
+            <div className={styles.listBlock}>
+                <h2 className={styles.listHeading}>Announcement List</h2>
+
+                <div className={styles.listCard}>
+                    <div className={styles.listToolbar}>
+                        <select
+                            className={styles.filterSelect}
+                            value={timeFilter}
+                            onChange={(e) => setTimeFilter(e.target.value)}
+                        >
+                            {TIME_FILTERS.map((t) => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className={styles.tableWrap}>
+                        <table className={styles.table}>
+                            <thead>
+                                <tr>
+                                    <th>Announcement Title</th>
+                                    <th>Audience</th>
+                                    <th>Description</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th className={styles.actionCol}>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {loading ? (
+                                    <tr><td colSpan={6} className={styles.tableEmpty}>Loading…</td></tr>
+                                ) : filteredList.length === 0 ? (
+                                    <tr><td colSpan={6} className={styles.tableEmpty}>No announcements found.</td></tr>
+                                ) : (
+                                    filteredList.map((a) => (
+                                        <tr key={a.announcement_id}>
+                                            <td className={styles.cellTitle}>{a.title}</td>
+                                            <td>
+                                                {audienceLabel(a.audience)}
+                                                {a.audience === 'class' && linkedClasses(a).length > 0 && (
+                                                    <span className={styles.cellSub}>
+                                                        {linkedClasses(a).map(classText).join(', ')}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className={styles.cellDesc}>{a.body}</td>
+                                            <td>{formatDate(a.start_date || a.created_at?.slice(0, 10))}</td>
+                                            <td>{formatDate(a.end_date)}</td>
+                                            <td className={styles.actionCol}>
+                                                <button
+                                                    className={styles.deleteBtn}
+                                                    onClick={() => handleDelete(a.announcement_id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className={styles.recordCount}>
+                        Showing {loading ? 0 : filteredList.length} record{filteredList.length === 1 ? '' : 's'}
+                    </div>
                 </div>
             </div>
 
-            {/* POST FORM (full width below) */}
-            <div className={styles.card} style={{ marginTop: 24 }}>
-                <div className={styles.cardHead}>
-                    <h3>New announcement</h3>
-                </div>
-                <div className={styles.cardBody}>
-                    <div className={styles.formTwoCol}>
-                        <div className={styles.formRow}>
-                            <label>Title</label>
-                            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Sports day" />
+            {/* Add modal */}
+            {modalOpen && (
+                <div className={styles.overlay} onMouseDown={closeModal}>
+                    <div className={styles.modal} onMouseDown={(e) => e.stopPropagation()}>
+                        <h3 className={styles.modalTitle}>Add New Announcement</h3>
+
+                        {formError && <div className={styles.modalError}>{formError}</div>}
+
+                        <div className={styles.field}>
+                            <label>Announcement Title</label>
+                            <input
+                                className={styles.input}
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Enter title"
+                            />
                         </div>
-                        <div className={styles.formRow}>
-                            <label>Category</label>
-                            <select value={category} onChange={(e) => setCategory(e.target.value)}>
-                                {CATEGORIES.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+
+                        <div className={styles.field}>
+                            <label>Description</label>
+                            <textarea
+                                className={styles.textarea}
+                                value={body}
+                                onChange={(e) => setBody(e.target.value)}
+                                placeholder="Enter description"
+                                rows={4}
+                            />
+                        </div>
+
+                        <div className={styles.fieldRow}>
+                            <div className={styles.field}>
+                                <label>Start Date</label>
+                                <input
+                                    type="date"
+                                    className={styles.input}
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                            </div>
+                            <div className={styles.field}>
+                                <label>End Date</label>
+                                <input
+                                    type="date"
+                                    className={styles.input}
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className={styles.divider} />
+
+                        <div className={styles.field}>
+                            <label>Target Audience</label>
+                            <select
+                                className={styles.input}
+                                value={audience}
+                                onChange={(e) => setAudience(e.target.value)}
+                            >
+                                {AUDIENCES.map((a) => (
+                                    <option key={a.value} value={a.value}>{a.label}</option>
+                                ))}
                             </select>
                         </div>
-                    </div>
 
-                    <div className={styles.formRow}>
-                        <label>Message</label>
-                        <textarea className={styles.textarea} value={body} onChange={(e) => setBody(e.target.value)}
-                            rows={4} placeholder="Write the announcement…" />
-                    </div>
-
-                    <div className={styles.formTwoCol}>
-                        <div className={styles.formRow}>
-                            <label>Audience</label>
-                            <select value={audience} onChange={(e) => setAudience(e.target.value)}>
-                                {AUDIENCES.map((a) => <option key={a.value} value={a.value}>{a.label}</option>)}
-                            </select>
-                        </div>
                         {audience === 'class' && (
-                            <div className={styles.formRow}>
-                                <label>Classes (select one or more)</label>
+                            <div className={styles.field}>
+                                <label>Classes</label>
                                 <div className={styles.classPicker}>
                                     {classes.length === 0 ? (
-                                        <div className={styles.muted}>No classes available.</div>
+                                        <div className={styles.classEmpty}>No classes available.</div>
                                     ) : (
                                         classes.map((c) => {
                                             const checked = selectedClassIds.includes(c.class_id)
@@ -457,11 +552,10 @@ function Announcements() {
                                                         type="checkbox"
                                                         checked={checked}
                                                         onChange={(e) => {
-                                                            if (e.target.checked) {
-                                                                setSelectedClassIds((prev) => [...prev, c.class_id])
-                                                            } else {
-                                                                setSelectedClassIds((prev) => prev.filter((id) => id !== c.class_id))
-                                                            }
+                                                            if (e.target.checked)
+                                                                setSelectedClassIds((p) => [...p, c.class_id])
+                                                            else
+                                                                setSelectedClassIds((p) => p.filter((id) => id !== c.class_id))
                                                         }}
                                                     />
                                                     <span>{classText(c)}</span>
@@ -472,36 +566,18 @@ function Announcements() {
                                 </div>
                             </div>
                         )}
-                    </div>
 
-                    <div className={styles.formTwoCol}>
-                        <div className={styles.formRow}>
-                            <label>Start date</label>
-                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-                        </div>
-                        <div className={styles.formRow}>
-                            <label>End date (optional)</label>
-                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                        <div className={styles.modalFoot}>
+                            <button className={styles.cancelBtn} onClick={closeModal} disabled={saving}>
+                                Cancel
+                            </button>
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                                {saving ? 'Saving…' : 'Save Announcement'}
+                            </button>
                         </div>
                     </div>
-
-                    <div className={styles.formRow}>
-                        <label>Attachment link (optional)</label>
-                        <input value={attachmentUrl} onChange={(e) => setAttachmentUrl(e.target.value)}
-                            placeholder="https://… (PDF, Drive link, etc.)" />
-                    </div>
-
-                    {message && (
-                        <div className={`${styles.message} ${message.type === 'ok' ? styles.messageOk : styles.messageErr}`}>
-                            {message.text}
-                        </div>
-                    )}
-
-                    <button className={styles.submitBtn} onClick={handlePost} disabled={saving}>
-                        {saving ? 'Posting…' : 'Post announcement'}
-                    </button>
                 </div>
-            </div>
+            )}
         </div>
     )
 }

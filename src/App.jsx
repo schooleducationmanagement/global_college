@@ -9,7 +9,8 @@ import Login from './auth/Login/Login'
 
 // ---- Admin pages (/admin/*) ----
 import AdminDashboard from './pages/admin/Dashboard/Dashboard'
-import AdminUsers from './pages/admin/Users/Users'
+import AdminTeachers from './pages/admin/Teachers/Teachers'
+import AdminStudents from './pages/admin/Students/Students'
 import AdminClasses from './pages/admin/Classes/Classes'
 import AdminSubjects from './pages/admin/Subjects/Subjects'
 import AdminTimetable from './pages/admin/Timetable/Timetable'
@@ -42,7 +43,8 @@ function App() {
         }
       >
         <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<AdminUsers />} />
+        <Route path="teachers" element={<AdminTeachers />} />
+        <Route path="students" element={<AdminStudents />} />
         <Route path="classes" element={<AdminClasses />} />
         <Route path="subjects" element={<AdminSubjects />} />
         <Route path="timetable" element={<AdminTimetable />} />
