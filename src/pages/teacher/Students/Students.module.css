@@ -260,3 +260,14 @@
     font-weight: 500;
     text-align: right;
 }
+
+/* scope banner (hierarchy) */
+.scopeNote {
+    background: #eef2ff;
+    border: 1px solid #c7d2fe;
+    color: #3730a3;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+}

@@ -29,6 +29,8 @@ function fmtTime(t) {
    ====================================================================== */
 function Attendance() {
     const { user } = useAuth()
+    const isHod = user?.rank === 'hod'
+    const myDept = user?.department || null
     const [searchParams] = useSearchParams()
 
     // A dashboard link can deep-link to a specific date + period:
@@ -44,6 +46,11 @@ function Attendance() {
     // period id we still want to auto-open once periods have loaded
     const [pendingPeriodId, setPendingPeriodId] = useState(urlPeriod || null)
 
+    // HOD-only: scope toggle + department class picker
+    const [mode, setMode] = useState('mine')          // 'mine' | 'dept'  (HODs only)
+    const [deptClasses, setDeptClasses] = useState([])
+    const [selectedClassId, setSelectedClassId] = useState(null)
+
     // resolve teacher_id from the logged-in user
     useEffect(() => {
         (async () => {
@@ -54,12 +61,68 @@ function Attendance() {
         })()
     }, [user])
 
-    // load my periods whenever date or teacherId changes
+    // HOD: load the department's classes once
     useEffect(() => {
-        if (teacherId && date) loadMyPeriods()
-        else { setPeriods([]); setSelectedPeriod(null) }
+        if (!isHod || !myDept) return
+        (async () => {
+            const { data } = await supabase
+                .from('classes')
+                .select('class_id, program, semester, section')
+                .eq('program', myDept)
+                .order('semester').order('section')
+            setDeptClasses(data || [])
+        })()
+    }, [isHod, myDept])
+
+    // load periods whenever the date, teacher, mode, or chosen class changes
+    useEffect(() => {
+        if (!date) { setPeriods([]); setSelectedPeriod(null); return }
+        if (mode === 'dept' && isHod) {
+            if (selectedClassId) loadClassPeriods()
+            else { setPeriods([]); setSelectedPeriod(null) }
+        } else {
+            if (teacherId) loadMyPeriods()
+            else { setPeriods([]); setSelectedPeriod(null) }
+        }
         // eslint-disable-next-line
-    }, [teacherId, date])
+    }, [teacherId, date, mode, selectedClassId])
+
+    // HOD department mode: every class-period for the chosen class on this date
+    async function loadClassPeriods() {
+        setLoadingPeriods(true)
+        setSelectedPeriod(null)
+        const weekday = weekdayOf(date)
+
+        const { data: rows } = await supabase
+            .from('timetable')
+            .select('*, subjects ( subject_name ), classes ( class_id, program, semester, section ), teachers ( name )')
+            .eq('class_id', selectedClassId)
+            .eq('day_of_week', weekday)
+            .eq('period_type', 'class')
+
+        const list = (rows || []).slice()
+
+        // annotate any period that has a substitute assigned on this date
+        const ids = list.map((p) => p.timetable_id)
+        if (ids.length) {
+            const { data: ov } = await supabase
+                .from('timetable_override')
+                .select('timetable_id, substitute_teacher_id, teachers:substitute_teacher_id ( name )')
+                .eq('date', date)
+                .in('timetable_id', ids)
+            const subMap = {}
+            for (const o of ov || []) {
+                if (o.substitute_teacher_id) subMap[String(o.timetable_id)] = o.teachers?.name || 'Substitute'
+            }
+            for (const p of list) {
+                if (subMap[String(p.timetable_id)]) p._subName = subMap[String(p.timetable_id)]
+            }
+        }
+
+        list.sort((a, b) => (a.period_no || 0) - (b.period_no || 0))
+        setPeriods(list)
+        setLoadingPeriods(false)
+    }
 
     async function loadMyPeriods() {
         setLoadingPeriods(true)
@@ -125,7 +188,11 @@ function Attendance() {
             <div className={styles.pageHead}>
                 <div>
                     <h2 className={styles.pageTitle}>Attendance</h2>
-                    <p className={styles.pageSub}>Pick a date and one of your periods, then mark the class.</p>
+                    <p className={styles.pageSub}>
+                        {mode === 'dept'
+                            ? 'Pick a class in your department, then a period, and mark the class.'
+                            : 'Pick a date and one of your periods, then mark the class.'}
+                    </p>
                 </div>
                 <div className={styles.dateRow}>
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={styles.dateInput} />
@@ -133,40 +200,97 @@ function Attendance() {
                 </div>
             </div>
 
-            <div className={styles.card}>
-                <div className={styles.cardHead}>
-                    <h3>Your periods</h3>
-                    <span className={styles.sheetMeta}>{loadingPeriods ? '' : `${periods.length} period${periods.length === 1 ? '' : 's'}`}</span>
+            {/* HOD: scope toggle */}
+            {isHod && myDept && (
+                <div className={styles.scopeToggle}>
+                    <button
+                        className={`${styles.scopeBtn} ${mode === 'mine' ? styles.scopeActive : ''}`}
+                        onClick={() => { setMode('mine'); setSelectedPeriod(null) }}
+                    >
+                        My periods
+                    </button>
+                    <button
+                        className={`${styles.scopeBtn} ${mode === 'dept' ? styles.scopeActive : ''}`}
+                        onClick={() => { setMode('dept'); setSelectedPeriod(null) }}
+                    >
+                        Department ({myDept})
+                    </button>
                 </div>
-                <div className={styles.cardBody}>
-                    {loadingPeriods ? (
-                        <div className={styles.empty}>Loading your periods…</div>
-                    ) : periods.length === 0 ? (
-                        <div className={styles.empty}>You have no class periods scheduled for this day.</div>
-                    ) : (
-                        <div className={styles.periodList}>
-                            {periods.map((p) => {
-                                const active = selectedPeriod && selectedPeriod.timetable_id === p.timetable_id
-                                return (
+            )}
+
+            {/* HOD department mode: choose a class first */}
+            {isHod && mode === 'dept' && (
+                <div className={styles.card}>
+                    <div className={styles.cardHead}>
+                        <h3>Classes in {myDept}</h3>
+                        <span className={styles.sheetMeta}>{deptClasses.length} class{deptClasses.length === 1 ? '' : 'es'}</span>
+                    </div>
+                    <div className={styles.cardBody}>
+                        {deptClasses.length === 0 ? (
+                            <div className={styles.empty}>No classes in this department yet.</div>
+                        ) : (
+                            <div className={styles.classPickRow}>
+                                {deptClasses.map((c) => (
                                     <button
-                                        key={p.timetable_id}
-                                        className={`${styles.periodItem} ${active ? styles.periodItemActive : ''}`}
-                                        onClick={() => setSelectedPeriod(p)}
+                                        key={c.class_id}
+                                        className={`${styles.classChip} ${String(selectedClassId) === String(c.class_id) ? styles.classChipActive : ''}`}
+                                        onClick={() => { setSelectedClassId(c.class_id); setSelectedPeriod(null) }}
                                     >
-                                        <span className={styles.periodNo}>P{p.period_no}</span>
-                                        <span className={styles.periodMain}>
-                                            <span className={styles.periodSubject}>{p.subjects?.subject_name || 'Subject'}</span>
-                                            <span className={styles.periodClass}>{classText(p.classes)}</span>
-                                        </span>
-                                        <span className={styles.periodTime}>{fmtTime(p.start_time)}–{fmtTime(p.end_time)}</span>
-                                        {p._substituting && <span className={styles.subBadge}>Substitute</span>}
+                                        {classText(c)}
                                     </button>
-                                )
-                            })}
-                        </div>
-                    )}
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            {/* Periods list — shown for "mine" mode, or once a class is picked in dept mode */}
+            {(mode === 'mine' || selectedClassId) && (
+                <div className={styles.card}>
+                    <div className={styles.cardHead}>
+                        <h3>{mode === 'dept' ? 'Periods' : 'Your periods'}</h3>
+                        <span className={styles.sheetMeta}>{loadingPeriods ? '' : `${periods.length} period${periods.length === 1 ? '' : 's'}`}</span>
+                    </div>
+                    <div className={styles.cardBody}>
+                        {loadingPeriods ? (
+                            <div className={styles.empty}>Loading periods…</div>
+                        ) : periods.length === 0 ? (
+                            <div className={styles.empty}>
+                                {mode === 'dept'
+                                    ? 'No periods scheduled for this class on this day.'
+                                    : 'You have no class periods scheduled for this day.'}
+                            </div>
+                        ) : (
+                            <div className={styles.periodList}>
+                                {periods.map((p) => {
+                                    const active = selectedPeriod && selectedPeriod.timetable_id === p.timetable_id
+                                    return (
+                                        <button
+                                            key={p.timetable_id}
+                                            className={`${styles.periodItem} ${active ? styles.periodItemActive : ''}`}
+                                            onClick={() => setSelectedPeriod(p)}
+                                        >
+                                            <span className={styles.periodNo}>P{p.period_no}</span>
+                                            <span className={styles.periodMain}>
+                                                <span className={styles.periodSubject}>{p.subjects?.subject_name || 'Subject'}</span>
+                                                <span className={styles.periodClass}>
+                                                    {mode === 'dept'
+                                                        ? (p._subName || p.teachers?.name || 'Unassigned')
+                                                        : classText(p.classes)}
+                                                </span>
+                                            </span>
+                                            <span className={styles.periodTime}>{fmtTime(p.start_time)}–{fmtTime(p.end_time)}</span>
+                                            {p._substituting && <span className={styles.subBadge}>Substitute</span>}
+                                            {mode === 'dept' && p._subName && <span className={styles.subBadge}>Sub</span>}
+                                        </button>
+                                    )
+                                })}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {selectedPeriod && (
                 <RosterSheet

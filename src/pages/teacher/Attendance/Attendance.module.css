@@ -1,479 +1,471 @@
-.header {
-    margin-bottom: 28px;
+/* ================================================================== */
+/*  Teacher Attendance                                                 */
+/* ================================================================== */
+.page {
+    color: #111827;
 }
 
-.header h2 {
-    font-size: 26px;
+/* ---------- page header (toolbar) ---------- */
+.pageHead {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.pageTitle {
+    font-size: 1.4rem;
     font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.02em;
+    color: #111827;
+    margin: 0 0 3px;
+    letter-spacing: -0.01em;
 }
 
-.header p {
-    color: #64748b;
-    font-size: 14px;
-    margin-top: 4px;
+.pageSub {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 0;
 }
 
-/* Calendar + feed layout */
-.calGrid {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 24px;
-    align-items: start;
+.dateRow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
-@media (max-width: 900px) {
-    .calGrid {
-        grid-template-columns: 1fr;
-    }
+.dateInput {
+    padding: 9px 12px;
+    background: #f9fafb;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    color: #111827;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
 }
 
+.dateInput:focus {
+    border-color: #4f46e5;
+    background: #fff;
+}
+
+.weekdayTag {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 5px 11px;
+    border-radius: 999px;
+}
+
+/* ---------- card ---------- */
 .card {
     background: #fff;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    margin-bottom: 18px;
     overflow: hidden;
 }
 
 .cardHead {
-    padding: 18px 22px;
-    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 20px;
+    border-bottom: 1px solid #f3f4f6;
 }
 
 .cardHead h3 {
-    font-size: 16px;
+    font-size: 0.98rem;
     font-weight: 600;
-    color: #0f172a;
+    color: #111827;
+    margin: 0;
 }
 
-.cardHead span {
-    font-size: 13px;
-    color: #94a3b8;
+.sheetMeta {
+    font-size: 0.8rem;
+    color: #9ca3af;
 }
 
 .cardBody {
-    padding: 22px;
+    padding: 18px 20px;
 }
 
-/* ---- Calendar ---- */
-.calHead {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.calTitle {
-    font-size: 15px;
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.navBtn {
-    width: 32px;
-    height: 32px;
-    border: 1px solid #e2e8f0;
-    background: #fff;
-    border-radius: 8px;
-    font-size: 18px;
-    line-height: 1;
-    color: #475569;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.navBtn:hover {
-    background: #f8fafc;
-}
-
-.calBody {
-    padding: 16px;
-}
-
-.weekRow {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    margin-bottom: 8px;
-}
-
-.weekCell {
+.empty {
+    padding: 32px;
     text-align: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: #94a3b8;
-    text-transform: uppercase;
+    color: #9ca3af;
+    font-size: 0.875rem;
 }
 
-.dayGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-}
-
-.dayEmpty {
-    aspect-ratio: 1;
-}
-
-.day {
-    aspect-ratio: 1;
-    border: 1px solid transparent;
-    background: #fff;
-    border-radius: 8px;
-    font-size: 13px;
-    color: #334155;
-    cursor: pointer;
+/* ---------- period list ---------- */
+.periodList {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+}
+
+.periodItem {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 3px;
-    position: relative;
-    transition: background 0.12s, border-color 0.12s;
+    gap: 14px;
+    padding: 12px 14px;
+    background: #fafafb;
+    border: 1px solid #eef0f2;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+    font-family: inherit;
 }
 
-.day:hover {
-    background: #f8fafc;
+.periodItem:hover {
+    border-color: #c7c4f5;
+    background: #f5f4ff;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.06);
 }
 
-.dayToday {
+.periodItemActive {
+    border-color: #4f46e5;
+    background: #f5f4ff;
+}
+
+.periodNo {
+    font-size: 0.72rem;
     font-weight: 700;
     color: #4f46e5;
-}
-
-.daySelected {
     background: #eef2ff;
-    border-color: #6366f1;
-    color: #3730a3;
-    font-weight: 600;
-}
-
-.dots {
-    display: flex;
-    gap: 2px;
-    height: 5px;
-}
-
-.dot {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    display: inline-block;
-}
-
-.dot_exam {
-    background: #dc2626;
-}
-
-.dot_event {
-    background: #4f46e5;
-}
-
-.dot_holiday {
-    background: #059669;
-}
-
-.dot_notice {
-    background: #d97706;
-}
-
-.legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid #f1f5f9;
-}
-
-.legendItem {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 12px;
-    color: #64748b;
-}
-
-/* ---- Feed ---- */
-.feed {
-    display: flex;
-    flex-direction: column;
-}
-
-.item {
-    padding: 18px 22px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.item:last-child {
-    border-bottom: none;
-}
-
-.itemTop {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 6px;
-}
-
-.itemTitle {
-    font-size: 15px;
-    font-weight: 600;
-    color: #0f172a;
-}
-
-.itemBody {
-    font-size: 14px;
-    color: #334155;
-    line-height: 1.55;
-    white-space: pre-wrap;
-    margin-bottom: 10px;
-}
-
-.attach {
-    display: inline-block;
-    font-size: 13px;
-    color: #4f46e5;
-    text-decoration: none;
-    margin-bottom: 10px;
-    font-weight: 500;
-}
-
-.attach:hover {
-    text-decoration: underline;
-}
-
-.itemMeta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    font-size: 12px;
-    color: #94a3b8;
-}
-
-.muted {
-    color: #94a3b8;
-}
-
-.badge {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
+    border-radius: 7px;
+    padding: 5px 9px;
     flex-shrink: 0;
 }
 
-.badge_exam {
+.periodMain {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    gap: 2px;
+}
+
+.periodSubject {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+.periodClass {
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+
+.periodTime {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+}
+
+.subBadge {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 3px 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+}
+
+/* ---------- roster summary + bulk ---------- */
+.rosterBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+
+.summary {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.sumChip {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    background: #f3f4f6;
+    padding: 5px 11px;
+    border-radius: 999px;
+}
+
+.sumPresent {
+    background: #f0fdf4;
+    color: #15803d;
+}
+
+.sumAbsent {
     background: #fef2f2;
     color: #b91c1c;
 }
 
-.badge_event {
-    background: #eef2ff;
-    color: #4338ca;
+.bulk {
+    display: flex;
+    gap: 6px;
 }
 
-.badge_holiday {
-    background: #ecfdf5;
-    color: #047857;
-}
-
-.badge_notice {
-    background: #fff7ed;
-    color: #c2410c;
-}
-
-.deleteBtn {
+.bulkBtn {
     padding: 6px 12px;
-    background: #fff;
-    color: #dc2626;
-    border: 1px solid #fecaca;
-    border-radius: 7px;
-    font-size: 13px;
+    background: #f9fafb;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s;
-    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
 }
 
-.deleteBtn:hover {
+.bulkBtn:hover {
+    border-color: #4f46e5;
+    color: #4f46e5;
+}
+
+/* ---------- roster table ---------- */
+.tableWrap {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    overflow-x: auto;
+}
+
+.rosterTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.rosterTable thead th {
+    background: #f9fafb;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.rosterTable tbody tr {
+    border-top: 1px solid #f3f4f6;
+    transition: background 0.1s;
+}
+
+.rosterTable tbody tr:hover {
+    background: #fafafb;
+}
+
+.rowAbsent {
+    background: #fef6f6;
+}
+
+.rowAbsent:hover {
     background: #fef2f2;
 }
 
-.empty {
-    text-align: center;
-    padding: 48px 20px;
-    color: #94a3b8;
-    font-size: 14px;
+.rosterTable td {
+    padding: 11px 16px;
+    color: #111827;
+    vertical-align: middle;
 }
 
-/* ---- Form ---- */
-.formTwoCol {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+.strong {
+    font-weight: 500;
+    color: #111827;
 }
 
-.formThreeCol {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
+.statusCol {
+    text-align: right;
+    white-space: nowrap;
 }
 
-@media (max-width: 640px) {
-
-    .formTwoCol,
-    .formThreeCol {
-        grid-template-columns: 1fr;
-    }
-}
-
-.formRow {
-    margin-bottom: 16px;
-}
-
-.formRow label {
-    display: block;
-    font-size: 12px;
+.rollBadge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: #475569;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+    color: #374151;
+    background: #f3f4f6;
+    padding: 3px 9px;
+    border-radius: 20px;
 }
 
-.formRow input,
-.formRow select,
-.textarea {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #cbd5e1;
+.toggle {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.toggleBtn {
+    padding: 6px 15px;
+    border: 1px solid #e5e7eb;
     border-radius: 8px;
-    font-size: 14px;
-    color: #0f172a;
     background: #fff;
-    transition: border-color 0.15s, box-shadow 0.15s;
-    box-sizing: border-box;
-}
-
-.textarea {
-    resize: vertical;
-    min-height: 90px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.12s;
     font-family: inherit;
-    line-height: 1.5;
 }
 
-.formRow input:focus,
-.formRow select:focus,
-.textarea:focus {
-    outline: none;
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+.toggleBtn:hover {
+    border-color: #9ca3af;
 }
 
-.submitBtn {
-    margin-top: 8px;
-    padding: 11px 22px;
+.presentOn {
+    background: #dcfce7;
+    border-color: #22c55e;
+    color: #15803d;
+}
+
+.absentOn {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* ---------- footer ---------- */
+.sheetFoot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+}
+
+.footHint {
+    font-size: 0.78rem;
+    color: #9ca3af;
+}
+
+.saveBtn {
+    padding: 10px 22px;
     background: #4f46e5;
     color: #fff;
     border: none;
     border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 0.875rem;
+    font-weight: 500;
     cursor: pointer;
     transition: background 0.15s;
 }
 
-.submitBtn:hover {
+.saveBtn:hover {
     background: #4338ca;
 }
 
-.submitBtn:disabled {
-    background: #a5b4fc;
-    cursor: not-allowed;
+.saveBtn:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
+/* ---------- messages ---------- */
 .message {
-    margin: 16px 0;
-    padding: 10px 12px;
+    padding: 11px 14px;
     border-radius: 8px;
-    font-size: 13px;
+    font-size: 0.855rem;
+    margin-bottom: 14px;
 }
 
 .messageOk {
-    background: #ecfdf5;
-    border: 1px solid #a7f3d0;
-    color: #047857;
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
 }
 
 .messageErr {
     background: #fef2f2;
-    border: 1px solid #fecaca;
     color: #b91c1c;
+    border: 1px solid #fecaca;
 }
 
-/* ---- Multi-class picker ---- */
-.classPicker {
-    border: 1px solid #cbd5e1;
+/* ---------- responsive ---------- */
+@media (max-width: 640px) {
+    .pageHead {
+        flex-direction: column;
+    }
+
+    .statusCol {
+        text-align: left;
+    }
+
+    .rosterBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* ============ HOD scope toggle + class picker ============ */
+.scopeToggle {
+    display: inline-flex;
+    gap: 4px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+}
+
+.scopeBtn {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
     border-radius: 8px;
-    padding: 8px;
-    max-height: 160px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #475569;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
 }
 
-.classOption {
+.scopeActive {
+    background: #fff;
+    color: #4f46e5;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.classPickRow {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
     gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    font-size: 14px;
+}
+
+.classChip {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 13px;
     color: #334155;
     cursor: pointer;
-    text-transform: none;
-    letter-spacing: normal;
-    font-weight: 400;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.classOption:hover {
+.classChip:hover {
     background: #f8fafc;
 }
 
-.classOption input {
-    width: auto;
-    margin: 0;
-    cursor: pointer;
-}
-
-/* --- submission status pills (approval workflow) --- */
-.statusPill {
-    font-size: 12px;
+.classChipActive {
+    background: #eef2ff;
+    border-color: #6366f1;
+    color: #3730a3;
     font-weight: 600;
-    padding: 2px 10px;
-    border-radius: 999px;
-    white-space: nowrap;
-}
-
-.status_pending {
-    background: #FAEEDA;
-    color: #854F0B;
-}
-
-.status_approved {
-    background: #E1F5EE;
-    color: #0F6E56;
-}
-
-.status_rejected {
-    background: #FCEBEB;
-    color: #A32D2D;
 }

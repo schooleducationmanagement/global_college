@@ -44,9 +44,11 @@ export function AuthProvider({ children }) {
                 localStorage.removeItem('user')
                 setUser(null)
             } else {
-                // Refresh from the DB so the stored copy stays current.
-                setUser(data)
-                localStorage.setItem('user', JSON.stringify(data))
+                // For teachers, attach their profile (rank, department, teacher_id)
+                // so pages can scope what they see by the hierarchy.
+                const enriched = await attachTeacherProfile(data)
+                setUser(enriched)
+                localStorage.setItem('user', JSON.stringify(enriched))
             }
 
             setLoading(false)
@@ -56,9 +58,29 @@ export function AuthProvider({ children }) {
         return () => { cancelled = true }
     }, [])
 
-    const login = (userData) => {
-        setUser(userData)
-        localStorage.setItem('user', JSON.stringify(userData))
+    // Look up the teacher row for a user and merge in rank/department/teacher_id.
+    async function attachTeacherProfile(userRow) {
+        if (userRow.role !== 'teacher') return userRow
+        const { data: t } = await supabase
+            .from('teachers')
+            .select('teacher_id, name, rank, department')
+            .eq('user_id', userRow.user_id)
+            .single()
+        if (!t) return userRow
+        return {
+            ...userRow,
+            teacher_id: t.teacher_id,
+            teacher_name: t.name,
+            rank: t.rank || 'class_teacher',
+            department: t.department || null,
+        }
+    }
+
+    const login = async (userData) => {
+        const enriched = await attachTeacherProfile(userData)
+        setUser(enriched)
+        localStorage.setItem('user', JSON.stringify(enriched))
+        return enriched
     }
 
     const logout = () => {

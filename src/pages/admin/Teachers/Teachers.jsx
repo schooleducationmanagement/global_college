@@ -2,10 +2,15 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../supabaseClient'
 import s from '../../../components/PageShell/PageShell.module.css'
 
-const EMPTY = { name: '', email: '', password: '', employee_id: '', phone: '' }
+const EMPTY = { name: '', email: '', password: '', employee_id: '', phone: '', rank: 'class_teacher', department: '' }
+
+function rankLabel(r) {
+    return r === 'hod' ? 'HOD' : 'Class Teacher'
+}
 
 export default function Teachers() {
     const [teachers, setTeachers] = useState([])
+    const [programs, setPrograms] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [modal, setModal] = useState(false)
@@ -14,7 +19,16 @@ export default function Teachers() {
     const [editUserId, setEditUserId] = useState(null)
     const [saving, setSaving] = useState(false)
 
-    useEffect(() => { fetchTeachers() }, [])
+    useEffect(() => { fetchTeachers(); fetchPrograms() }, [])
+
+    async function fetchPrograms() {
+        const { data } = await supabase
+            .from('classes')
+            .select('program')
+            .order('program')
+        const list = [...new Set((data || []).map(c => c.program).filter(Boolean))]
+        setPrograms(list)
+    }
 
     async function fetchTeachers() {
         setLoading(true)
@@ -38,6 +52,8 @@ export default function Teachers() {
             password: '',
             employee_id: t.employee_id || '',
             phone: t.phone || '',
+            rank: t.rank || 'class_teacher',
+            department: t.department || '',
         })
         setEditId(t.teacher_id)
         setEditUserId(t.user_id)
@@ -52,7 +68,19 @@ export default function Teachers() {
             setError(editId ? 'Name and email are required.' : 'Name, email and password are required.')
             return
         }
+        if (form.rank === 'hod' && !form.department) {
+            setError('An HOD must be assigned a department.')
+            return
+        }
         setSaving(true); setError(null)
+
+        const profileFields = {
+            name: form.name.trim(),
+            employee_id: form.employee_id.trim() || null,
+            phone: form.phone.trim() || null,
+            rank: form.rank,
+            department: form.department || null,
+        }
 
         if (editId) {
             // update login email + teacher profile
@@ -64,14 +92,10 @@ export default function Teachers() {
 
             const { error: tErr } = await supabase
                 .from('teachers')
-                .update({
-                    name: form.name.trim(),
-                    employee_id: form.employee_id.trim() || null,
-                    phone: form.phone.trim() || null,
-                })
+                .update(profileFields)
                 .eq('teacher_id', editId)
             setSaving(false)
-            if (tErr) { setError('Could not update teacher: ' + tErr.message); return }
+            if (tErr) { setError(hodConflictMessage(tErr) || 'Could not update teacher: ' + tErr.message); return }
             closeModal(); fetchTeachers(); return
         }
 
@@ -91,15 +115,21 @@ export default function Teachers() {
 
         const { error: tErr } = await supabase.from('teachers').insert({
             user_id: newUser.user_id,
-            name: form.name.trim(),
-            employee_id: form.employee_id.trim() || null,
-            phone: form.phone.trim() || null,
+            ...profileFields,
         })
         if (tErr) {
             await supabase.from('users').delete().eq('user_id', newUser.user_id)
-            setSaving(false); setError('Could not create teacher: ' + tErr.message); return
+            setSaving(false); setError(hodConflictMessage(tErr) || 'Could not create teacher: ' + tErr.message); return
         }
         setSaving(false); closeModal(); fetchTeachers()
+    }
+
+    // Friendlier message when the "one HOD per department" index is violated.
+    function hodConflictMessage(err) {
+        if (err?.code === '23505' || /one_hod_per_department/i.test(err?.message || '')) {
+            return `${form.department} already has an HOD. Change the existing HOD first, or pick another department.`
+        }
+        return null
     }
 
     async function handleDelete(t) {
@@ -129,6 +159,8 @@ export default function Teachers() {
                             <tr>
                                 <th>Name</th>
                                 <th>Email</th>
+                                <th>Role</th>
+                                <th>Department</th>
                                 <th>Employee ID</th>
                                 <th>Phone</th>
                                 <th>Status</th>
@@ -138,7 +170,7 @@ export default function Teachers() {
                         <tbody>
                             {teachers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6}>
+                                    <td colSpan={8}>
                                         <div className={s.empty}>
                                             <div className={s.emptyText}>No teachers yet. Add your first teacher.</div>
                                         </div>
@@ -149,6 +181,12 @@ export default function Teachers() {
                                     <tr key={t.teacher_id}>
                                         <td><strong>{t.name}</strong></td>
                                         <td style={{ fontSize: '0.82rem', color: '#6b7280' }}>{t.users?.email || '—'}</td>
+                                        <td>
+                                            {t.rank === 'hod'
+                                                ? <span className={`${s.badge} ${s.badgeGreen}`}>HOD</span>
+                                                : <span className={`${s.badge} ${s.badgeGray}`}>Class Teacher</span>}
+                                        </td>
+                                        <td style={{ fontSize: '0.82rem' }}>{t.department || '—'}</td>
                                         <td style={{ fontSize: '0.82rem' }}>{t.employee_id || '—'}</td>
                                         <td style={{ fontSize: '0.82rem' }}>{t.phone || '—'}</td>
                                         <td>
@@ -201,6 +239,25 @@ export default function Teachers() {
                             <div className={s.field}>
                                 <label className={s.label}>Phone</label>
                                 <input className={s.input} name="phone" value={form.phone} onChange={handleChange} placeholder="Optional" />
+                            </div>
+                        </div>
+
+                        <div className={s.grid2}>
+                            <div className={s.field}>
+                                <label className={s.label}>Role</label>
+                                <select className={s.input} name="rank" value={form.rank} onChange={handleChange}>
+                                    <option value="class_teacher">Class Teacher</option>
+                                    <option value="hod">HOD (Head of Department)</option>
+                                </select>
+                            </div>
+                            <div className={s.field}>
+                                <label className={s.label}>
+                                    Department {form.rank === 'hod' ? '(required)' : '(optional)'}
+                                </label>
+                                <select className={s.input} name="department" value={form.department} onChange={handleChange}>
+                                    <option value="">— None —</option>
+                                    {programs.map(p => <option key={p} value={p}>{p}</option>)}
+                                </select>
                             </div>
                         </div>
 

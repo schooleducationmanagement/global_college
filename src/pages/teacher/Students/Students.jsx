@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../supabaseClient'
+import { useAuth } from '../../../context/AuthContext'
 import styles from './Students.module.css'
 
 function classLabel(c) {
@@ -24,7 +25,13 @@ function formatDate(str) {
 }
 
 export default function Students() {
+    const { user } = useAuth()
+    const isHod = user?.rank === 'hod'
+    const myDept = user?.department || null
+    const myTeacherId = user?.teacher_id || null
+
     const [classes, setClasses] = useState([])
+    const [allClasses, setAllClasses] = useState([])
     const [students, setStudents] = useState([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -53,7 +60,7 @@ export default function Students() {
         setError(null)
         const [{ data: cls, error: cErr }, { data: st, error: sErr }] = await Promise.all([
             supabase.from('classes')
-                .select('class_id, program, semester, section')
+                .select('class_id, program, semester, section, class_teacher_id')
                 .order('program').order('semester').order('section'),
             supabase.from('students')
                 .select('*, users ( email, is_active ), classes ( class_id, program, semester, section )')
@@ -61,7 +68,20 @@ export default function Students() {
         ])
         if (cErr || sErr) setError((cErr || sErr).message)
         else {
-            setClasses(cls || [])
+            const all = cls || []
+            setAllClasses(all)
+            // Scope which classes this teacher can browse:
+            //  - HOD: every class in their department (program)
+            //  - Class teacher: only classes they are the class teacher of
+            let visible = all
+            if (isHod) {
+                visible = myDept ? all.filter((c) => c.program === myDept) : []
+            } else {
+                visible = myTeacherId
+                    ? all.filter((c) => c.class_teacher_id === myTeacherId)
+                    : []
+            }
+            setClasses(visible)
             setStudents(st || [])
         }
         setLoading(false)
@@ -107,6 +127,16 @@ export default function Students() {
     function onProgramChange(v) { setProgram(v); setSemester(''); setSection('') }
     function onSemesterChange(v) { setSemester(v); setSection('') }
 
+    // set of class_ids this teacher is allowed to see
+    const visibleClassIds = useMemo(
+        () => new Set(classes.map((c) => c.class_id)),
+        [classes]
+    )
+
+    function inScope(student) {
+        return student && visibleClassIds.has(student.class_id)
+    }
+
     // ---- lookup by student ID ----
     async function handleIdLookup() {
         setIdError('')
@@ -114,25 +144,37 @@ export default function Students() {
         const raw = idQuery.trim()
         if (!raw) { setIdError('Enter a student ID.'); return }
         // Try local list first, then fall back to a direct query.
-        const local = students.find((st) => String(st.student_id) === raw)
-        if (local) { setIdResult(local); setSelected(local); return }
-
-        setIdLoading(true)
-        const { data, error } = await supabase
-            .from('students')
-            .select('*, users ( email, is_active ), classes ( class_id, program, semester, section )')
-            .eq('student_id', raw)
-            .maybeSingle()
-        setIdLoading(false)
-        if (error) { setIdError('Lookup failed: ' + error.message); return }
-        if (!data) { setIdError('No student found with ID ' + raw + '.'); return }
-        setIdResult(data)
-        setSelected(data)
+        let found = students.find((st) => String(st.student_id) === raw)
+        if (!found) {
+            setIdLoading(true)
+            const { data, error } = await supabase
+                .from('students')
+                .select('*, users ( email, is_active ), classes ( class_id, program, semester, section )')
+                .eq('student_id', raw)
+                .maybeSingle()
+            setIdLoading(false)
+            if (error) { setIdError('Lookup failed: ' + error.message); return }
+            found = data
+        }
+        if (!found) { setIdError('No student found with ID ' + raw + '.'); return }
+        // Enforce hierarchy: teachers can only open students within their scope.
+        if (!inScope(found)) {
+            setIdError('That student is outside the classes you can access.')
+            return
+        }
+        setIdResult(found)
+        setSelected(found)
     }
 
     return (
         <div className={styles.page}>
             <h2 className={styles.heading}>Student lookup</h2>
+
+            <div className={styles.scopeNote}>
+                {isHod
+                    ? `Showing students across the ${myDept || 'your'} department.`
+                    : 'Showing students in the classes you are class teacher of.'}
+            </div>
 
             {error && <div className={styles.errorBanner}>{error}</div>}
 
