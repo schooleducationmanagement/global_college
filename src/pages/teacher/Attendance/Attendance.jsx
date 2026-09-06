@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../../../supabaseClient'
 import { useAuth } from '../../../context/AuthContext'
 import styles from './Attendance.module.css'
@@ -28,12 +29,20 @@ function fmtTime(t) {
    ====================================================================== */
 function Attendance() {
     const { user } = useAuth()
+    const [searchParams] = useSearchParams()
 
-    const [date, setDate] = useState(todayISO())
+    // A dashboard link can deep-link to a specific date + period:
+    //   /teacher/attendance?date=YYYY-MM-DD&period=<timetable_id>
+    const urlDate = searchParams.get('date')
+    const urlPeriod = searchParams.get('period')
+
+    const [date, setDate] = useState(urlDate || todayISO())
     const [teacherId, setTeacherId] = useState(null)
     const [periods, setPeriods] = useState([])
     const [selectedPeriod, setSelectedPeriod] = useState(null)
     const [loadingPeriods, setLoadingPeriods] = useState(false)
+    // period id we still want to auto-open once periods have loaded
+    const [pendingPeriodId, setPendingPeriodId] = useState(urlPeriod || null)
 
     // resolve teacher_id from the logged-in user
     useEffect(() => {
@@ -102,23 +111,34 @@ function Attendance() {
 
         setPeriods(all)
         setLoadingPeriods(false)
+
+        // If we arrived via a dashboard deep-link, open that period now.
+        if (pendingPeriodId) {
+            const match = all.find((p) => String(p.timetable_id) === String(pendingPeriodId))
+            if (match) setSelectedPeriod(match)
+            setPendingPeriodId(null)
+        }
     }
 
     return (
-        <div>
-            <div className={styles.header}>
-                <h2>Attendance</h2>
-                <p>Pick a date and one of your periods, then mark the class.</p>
+        <div className={styles.page}>
+            <div className={styles.pageHead}>
+                <div>
+                    <h2 className={styles.pageTitle}>Attendance</h2>
+                    <p className={styles.pageSub}>Pick a date and one of your periods, then mark the class.</p>
+                </div>
+                <div className={styles.dateRow}>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={styles.dateInput} />
+                    <span className={styles.weekdayTag}>{weekdayOf(date)}</span>
+                </div>
             </div>
 
             <div className={styles.card}>
+                <div className={styles.cardHead}>
+                    <h3>Your periods</h3>
+                    <span className={styles.sheetMeta}>{loadingPeriods ? '' : `${periods.length} period${periods.length === 1 ? '' : 's'}`}</span>
+                </div>
                 <div className={styles.cardBody}>
-                    <div className={styles.dateRow}>
-                        <label>Date</label>
-                        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                        <span className={styles.weekdayTag}>{weekdayOf(date)}</span>
-                    </div>
-
                     {loadingPeriods ? (
                         <div className={styles.empty}>Loading your periods…</div>
                     ) : periods.length === 0 ? (
@@ -229,13 +249,23 @@ function RosterSheet({ period, date, markedByTeacherId }) {
     }
 
     const markedCount = students.filter((s) => status[s.student_id]).length
+    const presentCount = students.filter((s) => status[s.student_id] === 'present').length
     const absentCount = students.filter((s) => status[s.student_id] === 'absent').length
+
+    function markAll(value) {
+        const next = {}
+        for (const s of students) next[s.student_id] = value
+        setStatus(next)
+    }
+    function clearAll() { setStatus({}) }
 
     return (
         <div className={styles.card}>
             <div className={styles.cardHead}>
                 <h3>{period.subjects?.subject_name} — {classText(period.classes)}</h3>
-                <span className={styles.sheetMeta}>{date} · marked {markedCount}/{students.length}{absentCount ? ` · ${absentCount} absent` : ''}</span>
+                <span className={styles.sheetMeta}>
+                    {new Date(date + 'T00:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                </span>
             </div>
             <div className={styles.cardBody}>
                 {message && (
@@ -250,38 +280,59 @@ function RosterSheet({ period, date, markedByTeacherId }) {
                     <div className={styles.empty}>No students are enrolled in this class.</div>
                 ) : (
                     <>
-                        <table className={styles.rosterTable}>
-                            <thead>
-                                <tr><th>Roll no</th><th>Student</th><th>Status</th></tr>
-                            </thead>
-                            <tbody>
-                                {students.map((s) => {
-                                    const st = status[s.student_id]
-                                    return (
-                                        <tr key={s.student_id}>
-                                            <td>{s.roll_no || '—'}</td>
-                                            <td className={styles.strong}>{s.name}</td>
-                                            <td>
-                                                <div className={styles.toggle}>
-                                                    <button
-                                                        className={`${styles.toggleBtn} ${st === 'present' ? styles.presentOn : ''}`}
-                                                        onClick={() => setMark(s.student_id, 'present')}
-                                                    >Present</button>
-                                                    <button
-                                                        className={`${styles.toggleBtn} ${st === 'absent' ? styles.absentOn : ''}`}
-                                                        onClick={() => setMark(s.student_id, 'absent')}
-                                                    >Absent</button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
+                        {/* summary + bulk actions */}
+                        <div className={styles.rosterBar}>
+                            <div className={styles.summary}>
+                                <span className={styles.sumChip}>{markedCount}/{students.length} marked</span>
+                                <span className={`${styles.sumChip} ${styles.sumPresent}`}>{presentCount} present</span>
+                                <span className={`${styles.sumChip} ${styles.sumAbsent}`}>{absentCount} absent</span>
+                            </div>
+                            <div className={styles.bulk}>
+                                <button className={styles.bulkBtn} onClick={() => markAll('present')}>All present</button>
+                                <button className={styles.bulkBtn} onClick={() => markAll('absent')}>All absent</button>
+                                <button className={styles.bulkBtn} onClick={clearAll}>Clear</button>
+                            </div>
+                        </div>
 
-                        <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
-                            {saving ? 'Saving…' : 'Save attendance'}
-                        </button>
+                        <div className={styles.tableWrap}>
+                            <table className={styles.rosterTable}>
+                                <thead>
+                                    <tr><th>Roll</th><th>Student</th><th className={styles.statusCol}>Status</th></tr>
+                                </thead>
+                                <tbody>
+                                    {students.map((s) => {
+                                        const st = status[s.student_id]
+                                        return (
+                                            <tr key={s.student_id} className={st === 'absent' ? styles.rowAbsent : ''}>
+                                                <td>
+                                                    <span className={styles.rollBadge}>{s.roll_no || '—'}</span>
+                                                </td>
+                                                <td className={styles.strong}>{s.name}</td>
+                                                <td className={styles.statusCol}>
+                                                    <div className={styles.toggle}>
+                                                        <button
+                                                            className={`${styles.toggleBtn} ${st === 'present' ? styles.presentOn : ''}`}
+                                                            onClick={() => setMark(s.student_id, 'present')}
+                                                        >Present</button>
+                                                        <button
+                                                            className={`${styles.toggleBtn} ${st === 'absent' ? styles.absentOn : ''}`}
+                                                            onClick={() => setMark(s.student_id, 'absent')}
+                                                        >Absent</button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        )
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className={styles.sheetFoot}>
+                            <span className={styles.footHint}>Unmarked students are left unchanged.</span>
+                            <button className={styles.saveBtn} onClick={handleSave} disabled={saving}>
+                                {saving ? 'Saving…' : 'Save attendance'}
+                            </button>
+                        </div>
                     </>
                 )}
             </div>

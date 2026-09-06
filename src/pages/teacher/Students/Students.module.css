@@ -1,0 +1,262 @@
+.page {
+    max-width: 1000px;
+}
+
+.heading {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: #1f2937;
+}
+
+.card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.cardTitle {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 14px;
+}
+
+.errorBanner {
+    background: #fef2f2;
+    border: 1px solid #f0d4d4;
+    color: #b91c1c;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+/* by-id lookup */
+.idRow {
+    display: flex;
+    gap: 10px;
+}
+
+.idRow .input {
+    max-width: 240px;
+}
+
+.inlineError {
+    color: #b91c1c;
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.idHit {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    background: #f9fafb;
+}
+
+.idHit:hover {
+    background: #f3f4f6;
+}
+
+/* filters */
+.filterRow {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 180px;
+    flex: 1;
+}
+
+.field label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #6b7280;
+}
+
+.input {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.input:disabled {
+    background: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* buttons */
+.primaryBtn {
+    background: #4f46e5;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.primaryBtn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.linkBtn {
+    background: none;
+    border: none;
+    color: #4f46e5;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0;
+}
+
+.linkBtn:hover {
+    text-decoration: underline;
+}
+
+/* results */
+.resultHead {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin: 16px 0 10px;
+}
+
+.empty {
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 18px 0;
+    text-align: center;
+}
+
+.tableWrap {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table th {
+    text-align: left;
+    padding: 10px 12px;
+    color: #6b7280;
+    font-weight: 500;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.table td {
+    padding: 11px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    color: #374151;
+}
+
+.cellName {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.cap {
+    text-transform: capitalize;
+}
+
+.actionCol {
+    text-align: right;
+    width: 90px;
+}
+
+.muted {
+    color: #6b7280;
+    font-size: 13px;
+}
+
+/* detail drawer */
+.overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 24, 39, 0.45);
+    display: flex;
+    justify-content: flex-end;
+    z-index: 50;
+}
+
+.drawer {
+    width: 420px;
+    max-width: 90vw;
+    height: 100%;
+    background: #fff;
+    padding: 24px;
+    overflow-y: auto;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+}
+
+.drawerHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.drawerHead h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1f2937;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    line-height: 1;
+    color: #9ca3af;
+    cursor: pointer;
+}
+
+.detailGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.detailItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 14px;
+}
+
+.detailItem span {
+    color: #6b7280;
+}
+
+.detailItem strong {
+    color: #1f2937;
+    font-weight: 500;
+    text-align: right;
+}

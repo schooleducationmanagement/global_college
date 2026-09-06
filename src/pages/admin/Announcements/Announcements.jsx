@@ -116,17 +116,24 @@ function Announcements() {
     }
 
     /* ---------- derived ---------- */
-    const latest = announcements[0] || null
+    const latest = announcements.find((a) => (a.status || 'approved') === 'approved') || null
 
     function linkedClasses(a) {
         return (a.announcement_classes || []).map((ac) => ac.classes).filter(Boolean)
     }
 
-    // list respecting the time filter
+    // teacher submissions awaiting review
+    const pendingList = useMemo(
+        () => announcements.filter((a) => (a.status || 'approved') === 'pending'),
+        [announcements]
+    )
+
+    // list respecting the time filter (published announcements only)
     const filteredList = useMemo(() => {
         const todayStr = ymd(today)
         const monthPrefix = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`
         return announcements.filter((a) => {
+            if ((a.status || 'approved') !== 'approved') return false
             const start = a.start_date || a.created_at?.slice(0, 10)
             const end = a.end_date || start
             if (!start) return timeFilter === 'all'
@@ -144,6 +151,7 @@ function Announcements() {
     const markedDays = useMemo(() => {
         const set = new Set()
         announcements.forEach((a) => {
+            if ((a.status || 'approved') !== 'approved') return
             const start = a.start_date || a.created_at?.slice(0, 10)
             if (!start) return
             const end = a.end_date || start
@@ -168,7 +176,9 @@ function Announcements() {
     // items for the currently selected day
     const selectedDayItems = useMemo(() => {
         if (!selectedDate) return []
-        return announcements.filter((a) => coversDay(a, selectedDate))
+        return announcements.filter(
+            (a) => (a.status || 'approved') === 'approved' && coversDay(a, selectedDate)
+        )
     }, [announcements, selectedDate])
 
     // the announcement shown in the hero when a day is selected (first match)
@@ -225,6 +235,7 @@ function Announcements() {
             audience,
             start_date: startDate || ymd(today),
             end_date: endDate || null,
+            status: 'approved', // admin posts are published immediately
         }
         if (user?.user_id) row.posted_by = user.user_id
 
@@ -263,6 +274,23 @@ function Announcements() {
         if (!window.confirm('Delete this announcement? This cannot be undone.')) return
         await supabase.from('announcement_classes').delete().eq('announcement_id', id)
         const { error } = await supabase.from('announcements').delete().eq('announcement_id', id)
+        if (!error) fetchAnnouncements()
+    }
+
+    async function handleApprove(id) {
+        const { error } = await supabase
+            .from('announcements')
+            .update({ status: 'approved' })
+            .eq('announcement_id', id)
+        if (!error) fetchAnnouncements()
+    }
+
+    async function handleReject(id) {
+        if (!window.confirm('Reject this announcement? It will not be published.')) return
+        const { error } = await supabase
+            .from('announcements')
+            .update({ status: 'rejected' })
+            .eq('announcement_id', id)
         if (!error) fetchAnnouncements()
     }
 
@@ -401,6 +429,61 @@ function Announcements() {
                     </div>
                 </section>
             </div>
+
+            {/* Pending approval queue (teacher submissions) */}
+            {pendingList.length > 0 && (
+                <div className={styles.listBlock}>
+                    <h2 className={styles.listHeading}>
+                        Pending approval <span className={styles.pendingCount}>{pendingList.length}</span>
+                    </h2>
+                    <div className={styles.listCard}>
+                        <div className={styles.tableWrap}>
+                            <table className={styles.table}>
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Audience</th>
+                                        <th>Description</th>
+                                        <th>Submitted by</th>
+                                        <th className={styles.actionCol}>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {pendingList.map((a) => (
+                                        <tr key={a.announcement_id}>
+                                            <td className={styles.cellTitle}>{a.title}</td>
+                                            <td>
+                                                {audienceLabel(a.audience)}
+                                                {a.audience === 'class' && linkedClasses(a).length > 0 && (
+                                                    <span className={styles.cellSub}>
+                                                        {linkedClasses(a).map(classText).join(', ')}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className={styles.cellDesc}>{a.body}</td>
+                                            <td>{a.users?.email || '—'}</td>
+                                            <td className={styles.actionCol}>
+                                                <button
+                                                    className={styles.approveBtn}
+                                                    onClick={() => handleApprove(a.announcement_id)}
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    className={styles.rejectBtn}
+                                                    onClick={() => handleReject(a.announcement_id)}
+                                                >
+                                                    Reject
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* List */}
             <div className={styles.listBlock}>

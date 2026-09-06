@@ -1,0 +1,243 @@
+/* ================================================================== */
+/*  Teacher Dashboard                                                  */
+/* ================================================================== */
+.page {
+    color: #111827;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+/* ---------- header ---------- */
+.header {
+    padding: 2px 2px 0;
+}
+
+.date {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.sub {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin: 6px 0 0;
+}
+
+/* ---------- schedule ---------- */
+.schedule {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.875rem;
+    padding: 28px 10px;
+}
+
+.periodList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.periodItem {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 18px;
+    border: 1px solid #eef0f2;
+    border-radius: 12px;
+    background: #fafafb;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.periodItem:hover {
+    border-color: #c7c4f5;
+    box-shadow: 0 1px 3px rgba(79, 70, 229, 0.08);
+}
+
+.periodNow {
+    border-color: #c7c4f5;
+    background: #f5f4ff;
+}
+
+/* left block: period badge + time */
+.periodTime {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 78px;
+}
+
+.periodNo {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #4f46e5;
+    background: #eef2ff;
+    border: 1px solid #e0e2ff;
+    padding: 6px 12px;
+    border-radius: 8px;
+}
+
+.periodClock {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: #9ca3af;
+    white-space: nowrap;
+}
+
+/* middle block: subject + class */
+.periodInfo {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.periodSubject {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.98rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.periodClass {
+    font-size: 0.82rem;
+    color: #6b7280;
+}
+
+.nowTag {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #fff;
+    background: #4f46e5;
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+.subTag {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: #b45309;
+    background: #fef3c7;
+    padding: 2px 7px;
+    border-radius: 999px;
+}
+
+/* right block: attendance button */
+.attendanceBtn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.15s;
+}
+
+.attendanceBtn:hover {
+    background: #4338ca;
+}
+
+/* ---------- announcement card ---------- */
+.card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.cardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.cardHead h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0;
+}
+
+.cardLink {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #4f46e5;
+    text-decoration: none;
+}
+
+.cardLink:hover {
+    text-decoration: underline;
+}
+
+.cardBody {
+    padding: 18px 20px;
+}
+
+.annBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.annTitle {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.95rem;
+}
+
+.annBody {
+    font-size: 0.85rem;
+    color: #6b7280;
+    line-height: 1.5;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.annDate {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 560px) {
+    .periodItem {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .attendanceBtn {
+        width: 100%;
+    }
+}

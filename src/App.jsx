@@ -26,6 +26,8 @@ import TeacherAttendance from './pages/teacher/Attendance/Attendance'
 import TeacherTimetable from './pages/teacher/Timetable/Timetable'
 import TeacherExams from './pages/teacher/Exams/Exams'
 import TeacherAnnouncements from './pages/teacher/Announcements/Announcements'
+import TeacherStudents from './pages/teacher/Students/Students'
+import TeacherProfile from './pages/teacher/Profile/Profile'
 
 function App() {
   return (
@@ -69,6 +71,8 @@ function App() {
         <Route path="timetable" element={<TeacherTimetable />} />
         <Route path="exams" element={<TeacherExams />} />
         <Route path="announcements" element={<TeacherAnnouncements />} />
+        <Route path="students" element={<TeacherStudents />} />
+        <Route path="profile" element={<TeacherProfile />} />
       </Route>
 
       {/* Root: send a logged-in user to their role's home, else to login. */}

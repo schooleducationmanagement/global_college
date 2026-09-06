@@ -671,3 +671,49 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
+
+/* --- approval workflow: pending queue + action buttons --- */
+.pendingCount {
+    display: inline-block;
+    margin-left: 8px;
+    background: #FAEEDA;
+    color: #854F0B;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 1px 10px;
+    border-radius: 999px;
+    vertical-align: middle;
+}
+
+.approveBtn {
+    background: #fff;
+    border: 1px solid #b7e0cf;
+    color: #0F6E56;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-right: 8px;
+    transition: background 0.15s ease;
+}
+
+.approveBtn:hover {
+    background: #E1F5EE;
+}
+
+.rejectBtn {
+    background: #fff;
+    border: 1px solid #f0d4d4;
+    color: #A32D2D;
+    border-radius: 8px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.rejectBtn:hover {
+    background: #FCEBEB;
+}

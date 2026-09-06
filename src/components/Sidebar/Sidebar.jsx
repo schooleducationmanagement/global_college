@@ -51,6 +51,13 @@ const teacherGroups = [
             { to: '/teacher/attendance', label: 'Attendance', icon: '✅' },
             { to: '/teacher/timetable', label: 'Timetable', icon: '📅' },
             { to: '/teacher/exams', label: 'Exams', icon: '📝' },
+            { to: '/teacher/students', label: 'Students', icon: '👥' },
+        ],
+    },
+    {
+        section: 'Account',
+        items: [
+            { to: '/teacher/profile', label: 'My Profile', icon: '👤' },
         ],
     },
 ]

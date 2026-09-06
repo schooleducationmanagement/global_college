@@ -125,6 +125,9 @@ function Announcements() {
 
     // ---- visibility gating for announcements ----
     function canSee(a) {
+        // Only published (approved) announcements appear in the calendar/feed.
+        // Pending and rejected posts are never shown to readers.
+        if ((a.status || 'approved') !== 'approved') return false
         if (isAdmin) return true
         if (a.audience === 'all' || a.audience === 'teachers') return true
         if (a.audience === 'class') {
@@ -178,6 +181,15 @@ function Announcements() {
         // eslint-disable-next-line
     }, [announcements, examItems, selectedDate, myCoordClassIds, isAdmin])
 
+    // ---- this teacher's own submissions (any status) ----
+    const mySubmissions = useMemo(() => {
+        if (!user?.user_id) return []
+        return announcements
+            .filter((a) => a.posted_by === user.user_id)
+            .slice()
+            .sort((x, y) => (y.created_at || '').localeCompare(x.created_at || ''))
+    }, [announcements, user])
+
     // ---- calendar grid ----
     const grid = useMemo(() => {
         const first = new Date(viewYear, viewMonth, 1)
@@ -229,6 +241,8 @@ function Announcements() {
             start_date: startDate,
             end_date: endDate || null,
             attachment_url: attachmentUrl.trim() || null,
+            // Admins publish instantly; teacher posts wait for admin approval.
+            status: isAdmin ? 'approved' : 'pending',
         }
         if (user?.user_id) row.posted_by = user.user_id
 
@@ -260,7 +274,12 @@ function Announcements() {
         }
 
         setSaving(false)
-        setMessage({ type: 'ok', text: 'Announcement posted.' })
+        setMessage({
+            type: 'ok',
+            text: isAdmin
+                ? 'Announcement posted.'
+                : 'Submitted for admin approval. It will be published once approved.',
+        })
         resetForm()
         fetchAnnouncements()
     }
@@ -285,11 +304,6 @@ function Announcements() {
 
     return (
         <div>
-            <div className={styles.header}>
-                <h2>Notice board & calendar</h2>
-                <p>Select a date to see exams and announcements for that day. Post notices tied to event dates.</p>
-            </div>
-
             <div className={styles.calGrid}>
                 {/* LEFT: calendar */}
                 <div className={styles.card}>
@@ -410,6 +424,47 @@ function Announcements() {
                 </div>
             </div>
 
+            {/* MY SUBMISSIONS — status of this teacher's own posts */}
+            <div className={styles.card} style={{ marginTop: 24 }}>
+                <div className={styles.cardHead}>
+                    <h3>My submissions</h3>
+                </div>
+                <div className={styles.cardBody}>
+                    {mySubmissions.length === 0 ? (
+                        <div className={styles.empty}>You haven’t posted any announcements yet.</div>
+                    ) : (
+                        <div className={styles.feed}>
+                            {mySubmissions.map((a) => {
+                                const st = a.status || 'approved'
+                                const label = st === 'pending' ? 'Pending review'
+                                    : st === 'rejected' ? 'Rejected' : 'Approved'
+                                return (
+                                    <div key={'mine' + a.announcement_id} className={styles.item}>
+                                        <div className={styles.itemTop}>
+                                            <div className={styles.itemTitle}>{a.title}</div>
+                                            <span className={`${styles.statusPill} ${styles['status_' + st] || ''}`}>
+                                                {label}
+                                            </span>
+                                        </div>
+                                        <div className={styles.itemBody}>{a.body}</div>
+                                        <div className={styles.itemMeta}>
+                                            <span className={styles.muted}>
+                                                {audienceLabel(a.audience)} · {formatDate(a.start_date)}
+                                            </span>
+                                            {st !== 'approved' && (
+                                                <button className={styles.deleteBtn} onClick={() => handleDelete(a.announcement_id)}>
+                                                    Delete
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* POST FORM (full width below) */}
             <div className={styles.card} style={{ marginTop: 24 }}>
                 <div className={styles.cardHead}>
@@ -498,7 +553,7 @@ function Announcements() {
                     )}
 
                     <button className={styles.submitBtn} onClick={handlePost} disabled={saving}>
-                        {saving ? 'Posting…' : 'Post announcement'}
+                        {saving ? 'Submitting…' : 'Submit for approval'}
                     </button>
                 </div>
             </div>
