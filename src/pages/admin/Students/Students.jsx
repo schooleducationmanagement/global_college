@@ -108,13 +108,13 @@ export default function Students() {
             closeModal(); fetchStudents(); return
         }
 
-        // create login (role parent) then student profile
+        // create login (role student) then student profile
         const { data: newUser, error: uErr } = await supabase
             .from('users')
             .insert({
                 email: form.email.trim().toLowerCase(),
                 password: form.password,
-                role: 'parent',
+                role: 'student',
                 is_active: true,
                 must_change_password: true,
             })

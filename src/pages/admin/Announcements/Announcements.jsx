@@ -9,7 +9,7 @@ import styles from './Announcements.module.css'
 const AUDIENCES = [
     { value: 'all', label: 'Everyone (Teachers + Students)' },
     { value: 'teachers', label: 'Teachers' },
-    { value: 'parents', label: 'Parents' },
+    { value: 'parents', label: 'Students' },
     { value: 'class', label: 'Specific class' },
 ]
 
