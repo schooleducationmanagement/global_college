@@ -35,7 +35,7 @@ function Login() {
             return
         }
 
-        login(data)          // save the user in context
+        await login(data)    // save the user in context (async for teachers)
         navigate('/')        // go to the dashboard
     }
 
