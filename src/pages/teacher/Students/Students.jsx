@@ -3,6 +3,18 @@ import { supabase } from '../../../supabaseClient'
 import { useAuth } from '../../../context/AuthContext'
 import styles from './Students.module.css'
 
+/* ======================================================================
+   TEACHER · STUDENTS
+   Search (name / roll no / student ID / email) and browse students in the
+   classes this teacher may see:
+     - HOD:           every class in their department (classes.program)
+     - Class teacher: only the classes they are class teacher of
+   ====================================================================== */
+
+const PAGE_SIZE = 1000          // Supabase's default max rows per request
+const MAX_RESULTS = 50          // cap the search result list
+const STUDENT_FIELDS = '*, users ( email, is_active ), classes ( class_id, program, semester, section )'
+
 function classLabel(c) {
     if (!c) return '—'
     return `${c.program} · Sem ${c.semester} · ${c.section}`
@@ -23,16 +35,35 @@ function formatDate(str) {
     if (isNaN(d)) return '—'
     return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
 }
+const isWholeNumber = (v) => /^\d+$/.test(v)
+
+// Load every student in the given classes, page by page, so nobody is cut
+// off by the 1,000-row limit.
+async function fetchStudentsIn(classIds) {
+    if (classIds.length === 0) return []
+    const rows = []
+    for (let from = 0; ; from += PAGE_SIZE) {
+        const { data, error } = await supabase
+            .from('students')
+            .select(STUDENT_FIELDS)
+            .in('class_id', classIds)
+            .order('name')
+            .order('student_id')
+            .range(from, from + PAGE_SIZE - 1)
+        if (error) throw error
+        rows.push(...(data || []))
+        if (!data || data.length < PAGE_SIZE) break
+    }
+    return rows
+}
 
 export default function Students() {
     const { user } = useAuth()
     const isHod = user?.rank === 'hod'
     const myDept = user?.department || null
-    const myTeacherId = user?.teacher_id || null
 
-    const [classes, setClasses] = useState([])
-    const [allClasses, setAllClasses] = useState([])
-    const [students, setStudents] = useState([])
+    const [classes, setClasses] = useState([])      // classes this teacher may see
+    const [students, setStudents] = useState([])    // students in those classes
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -41,11 +72,9 @@ export default function Students() {
     const [semester, setSemester] = useState('')
     const [section, setSection] = useState('')
 
-    // by-id lookup
-    const [idQuery, setIdQuery] = useState('')
-    const [idResult, setIdResult] = useState(null)   // student row | null
-    const [idError, setIdError] = useState('')
-    const [idLoading, setIdLoading] = useState(false)
+    // search
+    const [query, setQuery] = useState('')
+    const [outOfScopeNote, setOutOfScopeNote] = useState('')
 
     // detail drawer
     const [selected, setSelected] = useState(null)   // student row | null
@@ -53,38 +82,48 @@ export default function Students() {
     useEffect(() => {
         init()
         // eslint-disable-next-line
-    }, [])
+    }, [user?.user_id])
+
+    async function resolveTeacherId() {
+        if (user?.teacher_id) return user.teacher_id
+        // Older sessions may not carry teacher_id yet — look it up.
+        if (!user?.user_id) return null
+        const { data } = await supabase
+            .from('teachers').select('teacher_id').eq('user_id', user.user_id).maybeSingle()
+        return data?.teacher_id ?? null
+    }
 
     async function init() {
         setLoading(true)
         setError(null)
-        const [{ data: cls, error: cErr }, { data: st, error: sErr }] = await Promise.all([
-            supabase.from('classes')
+        try {
+            // 1) which classes can this teacher see?
+            let q = supabase
+                .from('classes')
                 .select('class_id, program, semester, section, class_teacher_id')
-                .order('program').order('semester').order('section'),
-            supabase.from('students')
-                .select('*, users ( email, is_active ), classes ( class_id, program, semester, section )')
-                .order('name'),
-        ])
-        if (cErr || sErr) setError((cErr || sErr).message)
-        else {
-            const all = cls || []
-            setAllClasses(all)
-            // Scope which classes this teacher can browse:
-            //  - HOD: every class in their department (program)
-            //  - Class teacher: only classes they are the class teacher of
-            let visible = all
+                .order('program').order('semester').order('section')
+
             if (isHod) {
-                visible = myDept ? all.filter((c) => c.program === myDept) : []
+                if (!myDept) { setClasses([]); setStudents([]); return }
+                q = q.eq('program', myDept)
             } else {
-                visible = myTeacherId
-                    ? all.filter((c) => c.class_teacher_id === myTeacherId)
-                    : []
+                const teacherId = await resolveTeacherId()
+                if (!teacherId) { setClasses([]); setStudents([]); return }
+                q = q.eq('class_teacher_id', teacherId)
             }
+
+            const { data: cls, error: cErr } = await q
+            if (cErr) throw cErr
+            const visible = cls || []
             setClasses(visible)
-            setStudents(st || [])
+
+            // 2) only the students in those classes
+            setStudents(await fetchStudentsIn(visible.map((c) => c.class_id)))
+        } catch (e) {
+            setError(e.message || String(e))
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     // ---- cascading option lists (each level narrows the next) ----
@@ -127,44 +166,43 @@ export default function Students() {
     function onProgramChange(v) { setProgram(v); setSemester(''); setSection('') }
     function onSemesterChange(v) { setSemester(v); setSection('') }
 
-    // set of class_ids this teacher is allowed to see
-    const visibleClassIds = useMemo(
-        () => new Set(classes.map((c) => c.class_id)),
-        [classes]
-    )
-
-    function inScope(student) {
-        return student && visibleClassIds.has(student.class_id)
-    }
-
-    // ---- lookup by student ID ----
-    async function handleIdLookup() {
-        setIdError('')
-        setIdResult(null)
-        const raw = idQuery.trim()
-        if (!raw) { setIdError('Enter a student ID.'); return }
-        // Try local list first, then fall back to a direct query.
-        let found = students.find((st) => String(st.student_id) === raw)
-        if (!found) {
-            setIdLoading(true)
-            const { data, error } = await supabase
-                .from('students')
-                .select('*, users ( email, is_active ), classes ( class_id, program, semester, section )')
-                .eq('student_id', raw)
-                .maybeSingle()
-            setIdLoading(false)
-            if (error) { setIdError('Lookup failed: ' + error.message); return }
-            found = data
+    // ---- search: name, roll no, student ID or email (in-scope students only) ----
+    const trimmed = query.trim()
+    const searchResults = useMemo(() => {
+        const q = trimmed.toLowerCase()
+        if (!q) return []
+        const exactId = []
+        const others = []
+        for (const st of students) {
+            if (String(st.student_id) === q) { exactId.push(st); continue }
+            const hit =
+                (st.name || '').toLowerCase().includes(q) ||
+                (st.roll_no || '').toString().toLowerCase().includes(q) ||
+                String(st.student_id).includes(q) ||
+                (st.users?.email || '').toLowerCase().includes(q)
+            if (hit) others.push(st)
         }
-        if (!found) { setIdError('No student found with ID ' + raw + '.'); return }
-        // Enforce hierarchy: teachers can only open students within their scope.
-        if (!inScope(found)) {
-            setIdError('That student is outside the classes you can access.')
-            return
-        }
-        setIdResult(found)
-        setSelected(found)
-    }
+        return [...exactId, ...others]   // exact ID match first
+    }, [students, trimmed])
+
+    // If a numeric ID matches nobody in scope, check whether that student exists
+    // elsewhere so we can say "outside your classes" instead of "not found".
+    // Only whole numbers ever reach the database (student_id is a number column).
+    useEffect(() => {
+        setOutOfScopeNote('')
+        if (!isWholeNumber(trimmed) || searchResults.length > 0) return
+        let cancelled = false
+        const t = setTimeout(async () => {
+            const { data } = await supabase
+                .from('students').select('student_id').eq('student_id', trimmed).maybeSingle()
+            if (!cancelled && data) {
+                setOutOfScopeNote(`Student ${trimmed} exists but is outside the classes you can access.`)
+            }
+        }, 350)
+        return () => { cancelled = true; clearTimeout(t) }
+    }, [trimmed, searchResults.length])
+
+    const totalInScope = students.length
 
     return (
         <div className={styles.page}>
@@ -174,34 +212,59 @@ export default function Students() {
                 {isHod
                     ? `Showing students across the ${myDept || 'your'} department.`
                     : 'Showing students in the classes you are class teacher of.'}
+                {!loading && ` ${totalInScope} student${totalInScope === 1 ? '' : 's'} in ${classes.length} class${classes.length === 1 ? '' : 'es'}.`}
             </div>
 
-            {error && <div className={styles.errorBanner}>{error}</div>}
+            {error && <div className={styles.errorBanner}>Could not load students: {error}</div>}
 
-            {/* By-ID lookup */}
+            {!loading && !error && classes.length === 0 && (
+                <div className={styles.errorBanner}>
+                    {isHod
+                        ? (myDept
+                            ? `No classes found for the ${myDept} department.`
+                            : 'Your profile has no department set. Ask the admin to assign one.')
+                        : "You aren't class teacher of any class yet, so there are no students to show."}
+                </div>
+            )}
+
+            {/* Search */}
             <div className={styles.card}>
-                <div className={styles.cardTitle}>Find by student ID</div>
+                <div className={styles.cardTitle}>Search students</div>
                 <div className={styles.idRow}>
                     <input
                         className={styles.input}
-                        value={idQuery}
-                        onChange={(e) => setIdQuery(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') handleIdLookup() }}
-                        placeholder="e.g. 1024"
+                        type="text"
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') setQuery('')
+                            if (e.key === 'Enter' && searchResults.length === 1) setSelected(searchResults[0])
+                        }}
+                        placeholder="Name, roll no, student ID or email"
+                        autoComplete="off"
+                        disabled={loading}
                     />
-                    <button className={styles.primaryBtn} onClick={handleIdLookup} disabled={idLoading}>
-                        {idLoading ? 'Searching…' : 'Look up'}
-                    </button>
+                    {query && (
+                        <button className={styles.primaryBtn} onClick={() => setQuery('')}>Clear</button>
+                    )}
                 </div>
-                {idError && <div className={styles.inlineError}>{idError}</div>}
-                {idResult && (
-                    <div className={styles.idHit} onClick={() => setSelected(idResult)}>
-                        <strong>{idResult.name}</strong>
-                        <span className={styles.muted}>
-                            · {classLabel(idResult.classes)} · Roll {idResult.roll_no || '—'}
-                        </span>
-                        <button className={styles.linkBtn}>View details</button>
+
+                {loading && trimmed && <div className={styles.empty}>Loading…</div>}
+
+                {!loading && trimmed && searchResults.length === 0 && (
+                    <div className={styles.inlineError}>
+                        {outOfScopeNote || `No student matching “${trimmed}” in your classes.`}
                     </div>
+                )}
+
+                {!loading && searchResults.length > 0 && (
+                    <>
+                        <div className={styles.resultHead}>
+                            {searchResults.length} match{searchResults.length === 1 ? '' : 'es'}
+                            {searchResults.length > MAX_RESULTS ? ` — showing the first ${MAX_RESULTS}, keep typing to narrow down` : ''}
+                        </div>
+                        <StudentTable rows={searchResults.slice(0, MAX_RESULTS)} showClass onOpen={setSelected} />
+                    </>
                 )}
             </div>
 
@@ -254,36 +317,7 @@ export default function Students() {
                         <div className={styles.resultHead}>
                             {classLabel(matchedClass)} — {classStudents.length} student{classStudents.length === 1 ? '' : 's'}
                         </div>
-                        <div className={styles.tableWrap}>
-                            <table className={styles.table}>
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Name</th>
-                                        <th>Roll no</th>
-                                        <th>Gender</th>
-                                        <th>Email</th>
-                                        <th className={styles.actionCol}></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {classStudents.map((st) => (
-                                        <tr key={st.student_id}>
-                                            <td>{st.student_id}</td>
-                                            <td className={styles.cellName}>{st.name}</td>
-                                            <td>{st.roll_no || '—'}</td>
-                                            <td className={styles.cap}>{st.gender || '—'}</td>
-                                            <td>{st.users?.email || '—'}</td>
-                                            <td className={styles.actionCol}>
-                                                <button className={styles.linkBtn} onClick={() => setSelected(st)}>
-                                                    Details
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <StudentTable rows={classStudents} onOpen={setSelected} />
                     </>
                 )}
             </div>
@@ -313,6 +347,43 @@ export default function Students() {
                     </div>
                 </div>
             )}
+        </div>
+    )
+}
+
+function StudentTable({ rows, onOpen, showClass = false }) {
+    return (
+        <div className={styles.tableWrap}>
+            <table className={styles.table}>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Roll no</th>
+                        {showClass && <th>Class</th>}
+                        <th>Gender</th>
+                        <th>Email</th>
+                        <th className={styles.actionCol}></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows.map((st) => (
+                        <tr key={st.student_id}>
+                            <td>{st.student_id}</td>
+                            <td className={styles.cellName}>{st.name}</td>
+                            <td>{st.roll_no || '—'}</td>
+                            {showClass && <td>{classLabel(st.classes)}</td>}
+                            <td className={styles.cap}>{st.gender || '—'}</td>
+                            <td>{st.users?.email || '—'}</td>
+                            <td className={styles.actionCol}>
+                                <button className={styles.linkBtn} onClick={() => onOpen(st)}>
+                                    Details
+                                </button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
     )
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../../supabaseClient'
 import s from '../../../components/PageShell/PageShell.module.css'
 
@@ -29,7 +30,22 @@ export default function Students() {
     const [editUserId, setEditUserId] = useState(null)
     const [saving, setSaving] = useState(false)
 
+    // Edit launched from a student's profile page (?edit=<student_id>):
+    // open the modal here, then go back to that profile when it closes.
+    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
+    const [returnToProfile, setReturnToProfile] = useState(null)
+
     useEffect(() => { fetchClasses(); fetchStudents() }, [])
+
+    useEffect(() => {
+        const editParam = searchParams.get('edit')
+        if (!editParam || loading) return
+        const st = students.find(x => String(x.student_id) === editParam)
+        if (st) { openEdit(st); setReturnToProfile(st.student_id) }
+        setSearchParams({}, { replace: true })
+        // eslint-disable-next-line
+    }, [searchParams, loading, students])
 
     async function fetchClasses() {
         const { data } = await supabase
@@ -64,6 +80,7 @@ export default function Students() {
     })
 
     function openAdd() {
+        setReturnToProfile(null)
         setForm({ ...EMPTY, class_id: filterClass || '' })
         setEditId(null); setEditUserId(null); setError(null); setModal(true)
     }
@@ -79,7 +96,15 @@ export default function Students() {
         })
         setEditId(st.student_id); setEditUserId(st.user_id); setError(null); setModal(true)
     }
-    function closeModal() { if (!saving) { setModal(false); setError(null) } }
+    function closeModal() {
+        if (saving) return
+        setModal(false); setError(null)
+        if (returnToProfile) {
+            const id = returnToProfile
+            setReturnToProfile(null)
+            navigate(`/admin/students/${id}`)
+        }
+    }
     function handleChange(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })) }
 
     async function handleSave() {
@@ -230,7 +255,8 @@ export default function Students() {
                                         <td><span className={`${s.badge} ${s.badgeBlue}`}>{classLabel(st.classes)}</span></td>
                                         <td>
                                             <div className={s.actions}>
-                                                <button className={`${s.btnGhost} ${s.btnSm}`} onClick={() => openEdit(st)}>Edit</button>
+                                                <button className={`${s.btnPrimary} ${s.btnSm}`} onClick={() => navigate(`/admin/students/${st.student_id}`)}>View</button>
+                                                <button className={`${s.btnGhost} ${s.btnSm}`} onClick={() => { setReturnToProfile(null); openEdit(st) }}>Edit</button>
                                                 <button className={`${s.btnDanger} ${s.btnSm}`} onClick={() => handleDelete(st)}>Delete</button>
                                             </div>
                                         </td>

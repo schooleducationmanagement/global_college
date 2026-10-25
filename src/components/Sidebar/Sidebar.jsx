@@ -7,17 +7,17 @@ const adminGroups = [
     {
         section: 'Overview',
         items: [
-            { to: '/admin', label: 'Dashboard', icon: '⊞', end: true },
+            // { to: '/admin', label: 'Dashboard', icon: '⊞', end: true },
             { to: '/admin/announcements', label: 'Announcements', icon: '📢' },
         ],
     },
     {
         section: 'Setup',
         items: [
-            { to: '/admin/classes', label: 'Classes & Subjects', icon: '🎓' },
             { to: '/admin/teachers', label: 'Create Teachers', icon: '👤' },
-            { to: '/admin/students', label: 'Create Students', icon: '👥' },
+            { to: '/admin/classes', label: 'Classes & Subjects', icon: '🎓' },
             { to: '/admin/teacher-assignments', label: 'Teacher Assignments', icon: '📋' },
+            { to: '/admin/students', label: 'Create Students', icon: '👥' },
         ],
     },
     {
@@ -32,6 +32,7 @@ const adminGroups = [
         items: [
             { to: '/admin/attendance', label: 'Attendance', icon: '✅' },
             { to: '/admin/exams', label: 'Exams', icon: '📝' },
+            { to: '/admin/study-materials', label: 'Study Materials', icon: '📚' },
         ],
     },
 ]
@@ -52,6 +53,7 @@ const teacherGroups = [
             { to: '/teacher/timetable', label: 'Timetable', icon: '📅' },
             { to: '/teacher/exams', label: 'Exams', icon: '📝' },
             { to: '/teacher/students', label: 'Students', icon: '👥' },
+            { to: '/teacher/study-materials', label: 'Study Materials', icon: '📚' },
         ],
     },
     {
